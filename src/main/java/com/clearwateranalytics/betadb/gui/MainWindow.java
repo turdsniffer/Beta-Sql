@@ -31,7 +31,7 @@ import net.infonode.docking.util.ViewMap;
 import static com.clearwateranalytics.betadb.gui.events.Event.*;
 
 /**
- *test this
+ * you test it 
  * @author parmstrong
  */
 public class MainWindow extends javax.swing.JFrame implements EventListener
