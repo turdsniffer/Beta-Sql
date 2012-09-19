@@ -1,4 +1,4 @@
-package com.clearwateranalytics.autocomplete.util;
+package com.swingautocompletion.util;
 
 import java.awt.Color;
 import java.awt.Component;

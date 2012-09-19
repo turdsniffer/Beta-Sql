@@ -1,6 +1,6 @@
-package com.clearwateranalytics.autocomplete;
+package com.swingautocompletion.main;
 
-import com.clearwateranalytics.autocomplete.util.TextEditorUtils;
+import com.swingautocompletion.util.TextEditorUtils;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.text.JTextComponent;

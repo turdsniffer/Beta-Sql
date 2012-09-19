@@ -1,7 +1,7 @@
-package com.clearwateranalytics.autocomplete;
+package com.swingautocompletion.main;
 
-import com.clearwateranalytics.autocomplete.util.Pair;
-import com.clearwateranalytics.autocomplete.util.TextEditorUtils;
+import com.swingautocompletion.util.Pair;
+import com.swingautocompletion.util.TextEditorUtils;
 import com.google.common.collect.Lists;
 import java.awt.Color;
 import java.awt.Dimension;

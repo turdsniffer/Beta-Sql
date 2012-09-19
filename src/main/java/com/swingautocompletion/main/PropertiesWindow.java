@@ -1,6 +1,6 @@
-package com.clearwateranalytics.autocomplete;
+package com.swingautocompletion.main;
 
-import com.clearwateranalytics.autocomplete.util.ZebraTableRenderer;
+import com.swingautocompletion.util.ZebraTableRenderer;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;

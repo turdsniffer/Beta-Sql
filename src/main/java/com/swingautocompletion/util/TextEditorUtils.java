@@ -1,8 +1,10 @@
-package com.clearwateranalytics.autocomplete.util;
+package com.swingautocompletion.util;
 
 import com.google.common.collect.Lists;
 import java.awt.Color;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.text.BadLocationException;
@@ -52,7 +54,13 @@ public class TextEditorUtils
 
 	public static String getCurrentWord(Pair<Integer, Integer> wordBounds, JTextComponent textComponent)
 	{
-		return textComponent.getText().substring(wordBounds.getFirst(), wordBounds.getSecond()).trim();
+            try 
+            {
+                return textComponent.getDocument().getText(wordBounds.getFirst(), wordBounds.getSecond()-wordBounds.getFirst());
+            } catch (BadLocationException ex) {
+                throw new IndexOutOfBoundsException("Error getting word part location not found");
+            }
+		
 	}
 
 	/**
@@ -88,31 +96,37 @@ public class TextEditorUtils
 	
 	public static Pair<Integer, Integer> getWordBounds(JTextComponent textComponent, List wordSeparators, ExpansionDirection expansionDirection)
 	{
+                try 
+                {
 		int startPosition = textComponent.getCaretPosition();
 		int endPosition = textComponent.getCaretPosition();
-
-		String text = textComponent.getText();
-
+                Document document = textComponent.getDocument();
+                
 		while (startPosition > 0 && (expansionDirection == ExpansionDirection.BOTH || expansionDirection == ExpansionDirection.LEFT))
-		{
-			startPosition--;
-			char curChar = text.charAt(startPosition);
-			if (wordSeparators.contains(curChar))
-			{
-				startPosition++;
-				break;
-			}
+		{            
+                    startPosition--;               
+                    char curChar = document.getText(startPosition,1).charAt(0);        
+                
+                    if (wordSeparators.contains(curChar))
+                    {
+                            startPosition++;
+                            break;
+                    }          
 		}
 		
-		while (endPosition < text.length() && (expansionDirection == ExpansionDirection.BOTH || expansionDirection == ExpansionDirection.RIGHT))
+		while (endPosition < document.getLength() && (expansionDirection == ExpansionDirection.BOTH || expansionDirection == ExpansionDirection.RIGHT))
 		{			
-			char curChar = text.charAt(endPosition);
+			char curChar = document.getText(endPosition,1).charAt(0);
 			if (wordSeparators.contains(curChar))
 				break;
 			endPosition++;
 		}
+                return new Pair<Integer, Integer>(startPosition, endPosition);
+                } catch (BadLocationException ex) {
+                     throw new IndexOutOfBoundsException("Error getting word part location not found");
+                }
 		
-		return new Pair<Integer, Integer>(startPosition, endPosition);
+		
 	}
 
 	public static void highlightWord(JTextComponent textComponent, String word)

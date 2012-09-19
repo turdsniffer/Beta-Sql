@@ -1,4 +1,4 @@
-package com.clearwateranalytics.autocomplete;
+package com.swingautocompletion.main;
 
 import java.util.List;
 
