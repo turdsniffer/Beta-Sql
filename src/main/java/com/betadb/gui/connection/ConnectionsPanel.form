@@ -117,7 +117,7 @@
               </Events>
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTree(treeModel)"/>
-                <AuxValue name="JavaCodeGenerator_CreateCodePost" type="java.lang.String" value="treeDbs.setRootVisible(false);&#xa;treeDbs.setEditable(true);&#xa;treeDbs.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);"/>
+                <AuxValue name="JavaCodeGenerator_CreateCodePost" type="java.lang.String" value="treeDbs.setRootVisible(false);&#xa;treeDbs.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);"/>
                 <AuxValue name="JavaCodeGenerator_CreateCodePre" type="java.lang.String" value="root = new DefaultMutableTreeNode(&quot;Root Node&quot;);&#xa;treeModel = new DefaultTreeModel(root);"/>
               </AuxValues>
             </Component>

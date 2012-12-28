@@ -54,7 +54,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	{		
 		
 		EventManager.getInstance().addEventListener(this);
-        initComponents();		
+        initComponents();
+		treeDbs.setEditable(false);
 		treeDbs.addMouseListener(new NodeMouseListener());
 		treeDbs.addTreeExpansionListener(new NodeExpansionListener());
 		treeDbs.setCellRenderer(new ConnectionsTreeCellRenderer());
@@ -150,7 +151,6 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
         treeModel = new DefaultTreeModel(root);
         treeDbs = new javax.swing.JTree(treeModel);
         treeDbs.setRootVisible(false);
-        treeDbs.setEditable(true);
         treeDbs.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
         btnConnect.setText("New Connection");
