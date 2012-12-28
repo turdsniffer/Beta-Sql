@@ -43,7 +43,7 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 				int firstOccurance = matcher.start();
 
 				currentTextBlock = currentTextBlock.substring(0,firstOccurance);
-				String[] split = currentTextBlock.split("\\s");
+				String[] split = currentTextBlock.split("\\s|\\.");
 				if(split.length > 0)
 				{
 

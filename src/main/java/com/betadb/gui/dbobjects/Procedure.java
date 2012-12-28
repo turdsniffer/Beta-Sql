@@ -24,11 +24,13 @@ public class Procedure extends DbObject
 	{
 		return parameters;
 	}
-	
+
+
+		
 	@Override
 	public String getAutoCompletion()
 	{
-		String retVal = this.getName();
+		String retVal = getSchemaName()+"."+getName();
 		for (Parameter parameter : getParameters())
 		{
 			retVal+=" "+parameter.getName()+" = ?,";

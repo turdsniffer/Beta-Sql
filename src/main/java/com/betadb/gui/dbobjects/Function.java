@@ -24,11 +24,11 @@ public class Function extends DbObject
 	{
 		return parameters;
 	}
-	
+
 	@Override
 	public String getAutoCompletion()
 	{
-		String retVal = this.getName();
+		String retVal = getSchemaName()+"."+getName();
 		retVal+="(";
 		for (Parameter parameter : getParameters())
 		{

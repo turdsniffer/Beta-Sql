@@ -28,4 +28,10 @@ public class View extends DbObject
 	{
 		return new ArrayList<AutoCompleteItem>(columns);
 	}
+
+	@Override
+	public String getAutoCompletion()
+	{
+		return getSchemaName()+"."+getName();
+	}
 }

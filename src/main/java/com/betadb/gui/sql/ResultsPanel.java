@@ -8,7 +8,6 @@
  *
  * Created on Jun 21, 2011, 3:02:47 PM
  */
-
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
@@ -18,6 +17,8 @@ import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.table.util.ZebraTableRenderer;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -37,143 +38,167 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 
 /**
  *
  * @author parmstrong
  */
-public class ResultsPanel extends javax.swing.JPanel {
+public class ResultsPanel extends javax.swing.JPanel
+{
+	private DataSource ds;
+	private DbInfo dbInfo;
+	private PreparedStatement stmt;
+	private MessagePanel messagePanel;
+	private Timer timer;
+	private QueryExecutor queryExecutor;
 
-	DataSource ds;
-	DbInfo dbInfo;
-	PreparedStatement stmt;
-	MessagePanel messagePanel;
-
-	
-    /** Creates new form ResultsPanel */
-    public ResultsPanel( DbConnection connectionInfo) {
-        initComponents();
+	/**
+	 * Creates new form ResultsPanel
+	 */
+	public ResultsPanel(DbConnection connectionInfo)
+	{
+		initComponents();
+		timer = new Timer(0, null);
 		ds = DataSourceSupplier.getInstance().getDataSourceByDbId(connectionInfo.getDataSourceKey());
 		dbInfo = connectionInfo.getDbInfo();
 		messagePanel = new MessagePanel();
 		jSplitPane1.setBottomComponent(messagePanel);
 		jSplitPane1.setResizeWeight(1);
-		
-    }
+	}
 
-	public void getResults(String sql)
-	{			
-		sql = "USE "+dbInfo.getDbName()+" \nGO\n "+sql;
-		
-		
-		messagePanel.setMessage("Running query...");
-		pnlResults.removeAll();
-		QueryExecutor queryExecutor = new QueryExecutor(sql);
-		queryExecutor.execute();			
+	public void executeSql(String sql)
+	{
+		executeSql(sql, null);
 	}
 	
+	public void executeSql(final String sql, Integer repeatInterval)
+	{			
+		timer.stop();
+		timer = new Timer(0, new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent ae)
+			{
+				if(queryExecutor != null && !queryExecutor.isDone())
+					return;
+				
+				messagePanel.setMessage("Running query...");
+				pnlResults.removeAll();
+				queryExecutor = new QueryExecutor(sql);
+				queryExecutor.execute();
+				
+			}
+		});
+		if(repeatInterval != null)
+			timer.setDelay(repeatInterval * 1000);
+		else
+			timer.setRepeats(false);
+		
+		timer.start();
+	}
+
 	private Component getResultsTable(ResultSet rs) throws SQLException
 	{
 		String[] columnNames = getColumnNames(rs);
 		Class[] columnClasses = getColumnClasses(rs);
-			
-		ArrayList <Object[]>data = new ArrayList<Object[]>();
+
+		ArrayList<Object[]> data = new ArrayList<Object[]>();
 		Object[] row;
-		
-		while(rs.next())
+
+		while (rs.next())
 		{
 			row = new Object[columnNames.length];
 			for (int i = 1; i <= row.length; i++)
 			{
-				row[i-1] = rs.getObject(i);
-			}	
+				row[i - 1] = rs.getObject(i);
+			}
 			data.add(row);
-		}	
-		
+		}
+
 		ResultsTableModel resultsTableModel = new ResultsTableModel(columnNames, columnClasses, data);
-		
-		
+
+
 		JTable table = new JTable(resultsTableModel);
 		table.setTransferHandler(new ResultsTableTransferHandler());
 		table.setAutoCreateRowSorter(true);
 		table.setColumnSelectionAllowed(true);
-		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);		
-		
+		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
 		table.setComponentPopupMenu(new ResultTablePopup());
 		for (Class clas : columnClasses)
-			table.setDefaultRenderer(clas, new ZebraTableRenderer());		
-		
+			table.setDefaultRenderer(clas, new ZebraTableRenderer());
+
 		JPanel resultsPanel = new JPanel();
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.PAGE_AXIS));
-		JLabel label = new JLabel("Rows: "+data.size());
+		JLabel label = new JLabel("Rows: " + data.size());
 		JScrollPane jScrollPane = new JScrollPane(table);
 		resultsPanel.add(label);
-		resultsPanel.add(jScrollPane);		
+		resultsPanel.add(jScrollPane);
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 		jScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-		
+
 		jScrollPane.setPreferredSize(new Dimension(100, 125));
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-		return resultsPanel;		
+		return resultsPanel;
 	}
-	
-	
+
 	private String[] getColumnNames(ResultSet rs) throws SQLException
 	{
 		ResultSetMetaData metaData = rs.getMetaData();
-		
+
 		int numColumns = metaData.getColumnCount();
 		String[] columns = new String[numColumns];
-		
-		for (int i=1; i<numColumns+1; i++) 
-			columns[i-1]= metaData.getColumnName(i);
 
-		return columns;			
+		for (int i = 1; i < numColumns + 1; i++)
+			columns[i - 1] = metaData.getColumnName(i);
+
+		return columns;
 	}
-	
+
 	private Class[] getColumnClasses(ResultSet rs) throws SQLException
 	{
 		ResultSetMetaData metaData = rs.getMetaData();
-		
+
 		int numColumns = metaData.getColumnCount();
 		Class[] classes = new Class[numColumns];
-		for (int i=1; i<numColumns+1; i++) 
+		for (int i = 1; i < numColumns + 1; i++)
 		{
 			try
 			{
-				classes[i-1]= Class.forName(metaData.getColumnClassName(i));
+				classes[i - 1] = Class.forName(metaData.getColumnClassName(i));
 			}
 			catch (ClassNotFoundException ex)
 			{
 				continue;
 			}
 		}
-	
+
 		return classes;
 	}
-	
+
 	public void cancelQuery()
-	{
+	{		
 		messagePanel.addMessage("Attempting to cancel query");
 		try
 		{
-			if(stmt != null && !stmt.isClosed())
+			if (stmt != null && !stmt.isClosed())
 				stmt.cancel();
 		}
 		catch (SQLException ex)
 		{
 			messagePanel.addMessage(ex.getMessage());
 		}
+		timer.stop();
 	}
-	
-	
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
+
+	/**
+	 * This method is called from within the constructor to initialize the form.
+	 * WARNING: Do NOT modify this code. The content of this method is always
+	 * regenerated by the Form Editor.
+	 */
+	@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -225,7 +250,7 @@ public class ResultsPanel extends javax.swing.JPanel {
 			try
 			{
 				conn = ds.getConnection();
-
+				conn.setCatalog(dbInfo.getDbName());				
 
 				String[] statements = sql.split("(?im)^\\s*GO\\s*$");
 				for (String sql : statements)

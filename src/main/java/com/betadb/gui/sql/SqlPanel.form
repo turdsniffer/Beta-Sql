@@ -54,6 +54,20 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnExecuteAllActionPerformed"/>
           </Events>
         </Component>
+        <Component class="javax.swing.JButton" name="btnRepeatExecution">
+          <Properties>
+            <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+              <Image iconType="3" name="/com/betadb/gui/icons/executeRepeat.png"/>
+            </Property>
+            <Property name="toolTipText" type="java.lang.String" value="Repeated Execution"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnRepeatExecutionActionPerformed"/>
+          </Events>
+        </Component>
         <Component class="javax.swing.JButton" name="btnCancelQuery">
           <Properties>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
@@ -108,6 +122,19 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnOpenFileActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="synchObjectsPane">
+          <Properties>
+            <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+              <Image iconType="3" name="/com/betadb/gui/icons/synch.png"/>
+            </Property>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="synchObjectsPaneActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

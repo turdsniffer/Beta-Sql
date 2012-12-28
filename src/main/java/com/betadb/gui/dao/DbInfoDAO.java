@@ -15,6 +15,7 @@ import com.betadb.gui.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,18 +43,16 @@ public class DbInfoDAO
 	}
 
 	public List<DbInfo> getDatabases() throws SQLException
-	{
-		QueryRunner runner = new QueryRunner(ds);
+	{		
 		Connection conn = ds.getConnection();		
-		
-		List<String> dbName = (List)runner.query(conn, "SELECT name FROM master..sysdatabases order by name", new ColumnListHandler("name"));		
-		
+		ResultSet rs = conn.getMetaData().getCatalogs();
 		List<DbInfo> retVal = new ArrayList<DbInfo>();
-		for (String name : dbName)
+		while(rs.next())
 		{
-				DbInfo dbInfo = new DbInfo(name);		
-				retVal.add(dbInfo);
+			DbInfo dbInfo = new DbInfo(rs.getString(1));
+			retVal.add(dbInfo);
 		}
+		rs.close();
 		conn.close();		
 		
 		return retVal;
@@ -100,7 +99,7 @@ public class DbInfoDAO
 	
 	private List<Procedure> getProcedures(Connection conn, String dbName, ListMultimap<Integer, Parameter> parameterMap) throws SQLException
 	{				
-		String sql = "use "+dbName+"; Select object_id as objectid, name from sys.objects where type = '"+DbObjectType.PROCEDURE.getAbbreviation()+"' order by name";		
+		String sql = "use "+dbName+"; Select object_id as objectid, schema_name(schema_id) as schemaName, name from sys.objects where type = '"+DbObjectType.PROCEDURE.getAbbreviation()+"' order by name";
 		QueryRunner runner = new QueryRunner(ds);
 		List<Procedure> results = (List)runner.query(conn, sql, new BeanListHandler<Procedure>(Procedure.class));
 		for (Procedure procedure : results)
@@ -112,7 +111,7 @@ public class DbInfoDAO
 	
 	private List<View> getViews(Connection conn, String dbName, ListMultimap<Integer, Column> columns) throws SQLException
 	{	
-		String sql = "use "+dbName+"; Select object_id as objectid, name from sys.objects where type = '"+DbObjectType.VIEW.getAbbreviation()+"' order by name";		
+		String sql = "use "+dbName+"; Select object_id as objectid, schema_name(schema_id) as schemaName, name from sys.objects where type = '"+DbObjectType.VIEW.getAbbreviation()+"' order by name";
 		QueryRunner runner = new QueryRunner(ds);
 		List<View> results = (List)runner.query(conn, sql, new BeanListHandler<View>(View.class));
 		for (View view : results)
@@ -122,7 +121,7 @@ public class DbInfoDAO
 	
 	private List<Function> getFunctions(Connection conn, String dbName, ListMultimap<Integer, Parameter> parameterMap) throws SQLException
 	{	
-		String sql = "use "+dbName+"; Select object_id as objectid, name from sys.objects where type in ( '"+DbObjectType.SCALAR_FUNCTION.getAbbreviation()
+		String sql = "use "+dbName+"; Select object_id as objectid, schema_name(schema_id) as schemaName, name from sys.objects where type in ( '"+DbObjectType.SCALAR_FUNCTION.getAbbreviation()
 				+"','"+DbObjectType.SQL_INLINE_TABLE_VALUED_FUNCTION.getAbbreviation()+
 				"','"+DbObjectType.TABLE_VALUE_FUNCTION.getAbbreviation()+"') order by name";		
 		QueryRunner runner = new QueryRunner(ds);

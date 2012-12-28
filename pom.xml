@@ -44,7 +44,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.clearwateranalytics.betadb.gui.MainWindow</mainClass>
+                            <mainClass>com.betadb.gui.MainWindow</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -86,7 +86,7 @@
             <version>1.0.3</version>
         </dependency>
         <dependency>
-            <groupId>com.betadb</groupId>
+            <groupId>idw-gpl</groupId>
             <artifactId>idw-gpl</artifactId>
             <version>1.6.1</version>
         </dependency>
@@ -117,7 +117,7 @@
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>com.betadb</groupId>
+            <groupId>jsyntaxpane</groupId>
             <artifactId>jsyntaxpane</artifactId>
             <version>0.9.5</version>
         </dependency>

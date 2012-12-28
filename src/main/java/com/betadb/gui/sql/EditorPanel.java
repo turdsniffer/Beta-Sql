@@ -17,6 +17,7 @@ import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
+import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.swingautocompletion.main.DefaultAutoCompleteItems;
@@ -64,10 +65,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener
 	private void refreshAutoCompleteOptions()
 	{
 		List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<AutoCompleteItem>();
-		autoCompletePossibilities.addAll(dbInfo.getTables());
-		autoCompletePossibilities.addAll(dbInfo.getViews());
-		autoCompletePossibilities.addAll(dbInfo.getFunctions());
-		autoCompletePossibilities.addAll(dbInfo.getProcedures());
+		autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
 		autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
 		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
 	}
@@ -119,14 +117,19 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener
 		}
 	}
 
+	String getCurrentWord()
+	{
+		return TextEditorUtils.getCurrentWord(codeEditor,Lists.newArrayList('\t','\n',' '));
+	}
+
 	private class WordHighlighter implements CaretListener
 	{
 
 		@Override
 		public void caretUpdate(CaretEvent ce)
 		{
-			String currentWord = TextEditorUtils.getCurrentWord(codeEditor);
-			TextEditorUtils.highlightWord(codeEditor, currentWord);;
+			String currentWord = getCurrentWord();
+			TextEditorUtils.highlightWord(codeEditor, currentWord);
 		}
 	}
 }

@@ -12,6 +12,7 @@ public class DbObject extends AutoCompleteItem
 {
 	private String name;
 	private int objectId;
+	private String schemaName;
 	private Map<String,String> properties = new TreeMap<String, String>();
 
 	public String getName()
@@ -44,6 +45,18 @@ public class DbObject extends AutoCompleteItem
 	public String getAutoCompleteId()
 	{
 		return getName();
+	}
+
+
+
+	public String getSchemaName()
+	{
+		return schemaName;
+	}
+
+	public void setSchemaName(String schemaName)
+	{
+		this.schemaName = schemaName;
 	}
 
 	public Map<String,String> getProperties()

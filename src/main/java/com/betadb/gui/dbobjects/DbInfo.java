@@ -9,6 +9,7 @@ import java.util.List;
 public class DbInfo
 {
 	private String dbName;
+	private String defaultSchema;
 	
 	private boolean lazyDataLoaded;
 	private List<Table>tables;
@@ -19,13 +20,24 @@ public class DbInfo
 	public DbInfo(String dbName)
 	{
 		this.dbName = dbName;
+		this.defaultSchema = "dbo";
 		lazyDataLoaded = false;
 		tables = new ArrayList<Table>();
 		procedures = new ArrayList<Procedure>();
 		views = new ArrayList<View>();
 		functions = new ArrayList<Function>();
 	}	
-	
+
+	public List<DbObject> getAllDbObjects()
+	{
+		List<DbObject> retVal = new ArrayList<DbObject>();
+		retVal.addAll(getTables());
+		retVal.addAll(getViews());
+		retVal.addAll(getFunctions());
+		retVal.addAll(getProcedures());
+		return retVal;
+	}
+
 	public String getDbName()
 	{
 		return dbName;
@@ -85,6 +97,16 @@ public class DbInfo
 	public void setFunctions(List<Function> functions)
 	{
 		this.functions = functions;
+	}
+
+	public String getDefaultSchema()
+	{
+		return defaultSchema;
+	}
+
+	public void setDefaultSchema(String defaultSchema)
+	{
+		this.defaultSchema = defaultSchema;
 	}
 	
 }

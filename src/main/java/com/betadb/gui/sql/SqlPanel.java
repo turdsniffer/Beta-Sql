@@ -9,8 +9,6 @@ package com.betadb.gui.sql;
 import com.betadb.gui.connection.DbConnection;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -23,6 +21,7 @@ import javax.swing.JFileChooser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -40,12 +39,7 @@ public class SqlPanel extends javax.swing.JPanel
     /** Creates new form SqlPanel */
     public SqlPanel(DbConnection connectionInfo) 
 	{			
-        initComponents();
-		
-		
-       
-		
-		
+        initComponents();	
 		fileChooser = new JFileChooser();
 		resultsPanel = new ResultsPanel(connectionInfo);
 		editorPanel = new EditorPanel(connectionInfo);
@@ -73,11 +67,15 @@ public class SqlPanel extends javax.swing.JPanel
 		});
     }
 
-	
 	private void executeSql(boolean executeAll)
+	{
+		executeSql(executeAll, null);
+	}
+	
+	private void executeSql(boolean executeAll, Integer repeatInterval)
 	{		
 		String sql = editorPanel.getSql(executeAll);
-		resultsPanel.getResults(sql);
+		resultsPanel.executeSql(sql, repeatInterval);
 	}
 	
 	private void save(boolean saveAs)
@@ -130,15 +128,18 @@ public class SqlPanel extends javax.swing.JPanel
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jToolBar1 = new javax.swing.JToolBar();
         btnExecute = new javax.swing.JButton();
         btnExecuteAll = new javax.swing.JButton();
+        btnRepeatExecution = new javax.swing.JButton();
         btnCancelQuery = new javax.swing.JButton();
         btnSave = new javax.swing.JButton();
         btnSaveAs = new javax.swing.JButton();
         btnOpenFile = new javax.swing.JButton();
+        synchObjectsPane = new javax.swing.JButton();
         pnlMain = new javax.swing.JPanel();
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.PAGE_AXIS));
@@ -151,8 +152,10 @@ public class SqlPanel extends javax.swing.JPanel
         btnExecute.setFocusable(false);
         btnExecute.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnExecute.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnExecute.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnExecute.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnExecuteActionPerformed(evt);
             }
         });
@@ -163,20 +166,38 @@ public class SqlPanel extends javax.swing.JPanel
         btnExecuteAll.setFocusable(false);
         btnExecuteAll.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnExecuteAll.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnExecuteAll.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnExecuteAll.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnExecuteAllActionPerformed(evt);
             }
         });
         jToolBar1.add(btnExecuteAll);
+
+        btnRepeatExecution.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/executeRepeat.png"))); // NOI18N
+        btnRepeatExecution.setToolTipText("Repeated Execution");
+        btnRepeatExecution.setFocusable(false);
+        btnRepeatExecution.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        btnRepeatExecution.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        btnRepeatExecution.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnRepeatExecutionActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(btnRepeatExecution);
 
         btnCancelQuery.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/cancel.png"))); // NOI18N
         btnCancelQuery.setToolTipText("Cancel");
         btnCancelQuery.setFocusable(false);
         btnCancelQuery.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnCancelQuery.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnCancelQuery.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnCancelQuery.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnCancelQueryActionPerformed(evt);
             }
         });
@@ -187,8 +208,10 @@ public class SqlPanel extends javax.swing.JPanel
         btnSave.setFocusable(false);
         btnSave.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnSave.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnSave.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnSave.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnSaveActionPerformed(evt);
             }
         });
@@ -199,8 +222,10 @@ public class SqlPanel extends javax.swing.JPanel
         btnSaveAs.setFocusable(false);
         btnSaveAs.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnSaveAs.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnSaveAs.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnSaveAs.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnSaveAsActionPerformed(evt);
             }
         });
@@ -211,12 +236,27 @@ public class SqlPanel extends javax.swing.JPanel
         btnOpenFile.setFocusable(false);
         btnOpenFile.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnOpenFile.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        btnOpenFile.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnOpenFile.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnOpenFileActionPerformed(evt);
             }
         });
         jToolBar1.add(btnOpenFile);
+
+        synchObjectsPane.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/synch.png"))); // NOI18N
+        synchObjectsPane.setFocusable(false);
+        synchObjectsPane.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        synchObjectsPane.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        synchObjectsPane.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                synchObjectsPaneActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(synchObjectsPane);
 
         add(jToolBar1);
 
@@ -288,14 +328,29 @@ public class SqlPanel extends javax.swing.JPanel
 		save(true);
 	}//GEN-LAST:event_btnSaveAsActionPerformed
 
+    private void btnRepeatExecutionActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRepeatExecutionActionPerformed
+    {//GEN-HEADEREND:event_btnRepeatExecutionActionPerformed
+        String inputValue = JOptionPane.showInputDialog(btnRepeatExecution,"Seconds between repeats: ", 5);
+		int repeatInterval = Integer.parseInt(inputValue);
+		executeSql(false, repeatInterval);
+    }//GEN-LAST:event_btnRepeatExecutionActionPerformed
+
+    private void synchObjectsPaneActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_synchObjectsPaneActionPerformed
+    {//GEN-HEADEREND:event_synchObjectsPaneActionPerformed
+		String sql = editorPanel.getCurrentWord();
+		
+    }//GEN-LAST:event_synchObjectsPaneActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCancelQuery;
     private javax.swing.JButton btnExecute;
     private javax.swing.JButton btnExecuteAll;
     private javax.swing.JButton btnOpenFile;
+    private javax.swing.JButton btnRepeatExecution;
     private javax.swing.JButton btnSave;
     private javax.swing.JButton btnSaveAs;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JPanel pnlMain;
+    private javax.swing.JButton synchObjectsPane;
     // End of variables declaration//GEN-END:variables
 }

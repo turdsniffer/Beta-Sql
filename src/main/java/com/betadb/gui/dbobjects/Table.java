@@ -12,8 +12,7 @@ import java.util.List;
 public class Table extends DbObject
 {
 	private List<Column> columns;
-	private List<Index> indexes;
-	private String schemaName;
+	private List<Index> indexes;	
 
 	public Table()
 	{
@@ -34,17 +33,7 @@ public class Table extends DbObject
 	public List<? extends AutoCompleteItem> getSubSuggestions()
 	{
 		return new ArrayList<AutoCompleteItem>(columns);
-	}
-
-	public String getSchemaName()
-	{
-		return schemaName;
-	}
-
-	public void setSchemaName(String schemaName)
-	{
-		this.schemaName = schemaName;
-	}
+	}	
 
 	public List<Index> getIndexes()
 	{
@@ -54,5 +43,11 @@ public class Table extends DbObject
 	public void setIndexes(List<Index> indexes)
 	{
 		this.indexes = indexes;
+	}
+
+	@Override
+	public String getAutoCompletion()
+	{
+		return getSchemaName()+"."+getName();
 	}
 }
