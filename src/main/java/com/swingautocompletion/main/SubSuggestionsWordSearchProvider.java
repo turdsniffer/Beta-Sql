@@ -23,6 +23,6 @@ public class SubSuggestionsWordSearchProvider
 
 		if(block == null)
 			return new String[0];
-		return block.split("\\s");		
+		return block.split("\\s|\\.");		
 	}
 }
