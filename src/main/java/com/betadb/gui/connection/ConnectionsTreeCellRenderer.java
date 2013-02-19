@@ -32,7 +32,7 @@ public class ConnectionsTreeCellRenderer extends DefaultTreeCellRenderer
 		if (userObject instanceof Column)
 		{
 			Column col = (Column)userObject;
-			setText(col.getName()+" "+col.getDataType()+"("+col.getLength()+")");
+			setText(col.getName()+" "+col.getDataType()+"("+String.valueOf(col.getDecimalDigits())+")");
 		}
 		else if(userObject instanceof Table)
 		{

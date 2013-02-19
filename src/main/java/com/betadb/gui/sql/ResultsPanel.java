@@ -14,6 +14,7 @@ import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.datasource.DataSourceSupplier;
 import com.betadb.gui.datasource.SQLUtils;
 import com.betadb.gui.dbobjects.DbInfo;
+import com.betadb.gui.jdbc.util.ResultSetUtils;
 import com.betadb.gui.table.util.ZebraTableRenderer;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -100,8 +101,9 @@ public class ResultsPanel extends javax.swing.JPanel
 
 	private Component getResultsTable(ResultSet rs) throws SQLException
 	{
-		String[] columnNames = getColumnNames(rs);
-		Class[] columnClasses = getColumnClasses(rs);
+
+		String[] columnNames = ResultSetUtils.getColumnNames(rs);
+		Class[] columnClasses = ResultSetUtils.getColumnClasses(rs);
 
 		ArrayList<Object[]> data = new ArrayList<Object[]>();
 		Object[] row;
@@ -144,39 +146,9 @@ public class ResultsPanel extends javax.swing.JPanel
 		return resultsPanel;
 	}
 
-	private String[] getColumnNames(ResultSet rs) throws SQLException
-	{
-		ResultSetMetaData metaData = rs.getMetaData();
+	
 
-		int numColumns = metaData.getColumnCount();
-		String[] columns = new String[numColumns];
-
-		for (int i = 1; i < numColumns + 1; i++)
-			columns[i - 1] = metaData.getColumnName(i);
-
-		return columns;
-	}
-
-	private Class[] getColumnClasses(ResultSet rs) throws SQLException
-	{
-		ResultSetMetaData metaData = rs.getMetaData();
-
-		int numColumns = metaData.getColumnCount();
-		Class[] classes = new Class[numColumns];
-		for (int i = 1; i < numColumns + 1; i++)
-		{
-			try
-			{
-				classes[i - 1] = Class.forName(metaData.getColumnClassName(i));
-			}
-			catch (ClassNotFoundException ex)
-			{
-				continue;
-			}
-		}
-
-		return classes;
-	}
+	
 
 	public void cancelQuery()
 	{		
