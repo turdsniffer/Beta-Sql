@@ -98,7 +98,8 @@ public class AutoCompletePopup extends JWindow
 			public void keyPressed(KeyEvent e)
 			{
 				if (e.isConsumed()) return;
-				if (e.getKeyCode() == KeyEvent.VK_SPACE && (e.isControlDown() || e.isShiftDown()))
+				
+				if (Character.isLetterOrDigit(e.getKeyChar()) || e.getKeyCode() == KeyEvent.VK_PERIOD || (e.getKeyCode() == KeyEvent.VK_SPACE && (e.isControlDown() || e.isShiftDown())))
 				{						
 					if(e.isShiftDown() && e.isControlDown())
 						searchStrategy = new LinearContainsSearch();
@@ -108,8 +109,8 @@ public class AutoCompletePopup extends JWindow
 					
 					addSubSuggestions();
 					updateAutoComplete();
-					if(model.getSize()==1)
-						insertSelectedItem();
+//					if(model.getSize()==1)
+//						insertSelectedItem();
 					e.consume();
 				}
 				
