@@ -1,34 +1,35 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dbobjects.Index;
-import com.betadb.gui.dbobjects.Parameter;
-import com.betadb.gui.dbobjects.Function;
-import javax.swing.event.TreeExpansionEvent;
-import com.betadb.gui.dbobjects.View;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.tree.TreeSelectionModel;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.JOptionPane;
 import com.betadb.gui.dao.DbInfoDAO;
-import java.sql.SQLException;
-import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.List;
-import com.betadb.gui.events.Event;
-import com.betadb.gui.events.EventListener;
 import com.betadb.gui.datasource.DataSourceSupplier;
 import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.dbobjects.Function;
+import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
-import com.betadb.gui.events.EventManager;
-import java.util.ArrayList;
-import javax.sql.DataSource;
-import javax.swing.event.TreeExpansionListener;
-import javax.swing.tree.TreePath;
+import com.betadb.gui.dbobjects.View;
+import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.*;
+import com.betadb.gui.events.EventListener;
+import com.betadb.gui.events.EventManager;
+import com.betadb.gui.exception.BetaDbException;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
+import javax.sql.DataSource;
+import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 /**
  *
@@ -41,6 +42,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	private static DataSourceSupplier dataSourceSupplier = DataSourceSupplier.getInstance();
 	private DefaultMutableTreeNode root;
 	private DefaultTreeModel treeModel;
+
 	
 	public static ConnectionsPanel getInstance()
 	{
@@ -92,7 +94,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		for (DbInfo dbInfo : infos)
 		{
 			DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(dbInfo);	
-			dbNode.add(new DefaultMutableTreeNode("Please Wait..."));
+			dbNode.add(new DefaultMutableTreeNode("Loading Objects..."));
 			top.add(dbNode);					
 		}	
 	}
@@ -250,7 +252,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		if (node == null)
 			return;
 		DbInfo dbInfo = (DbInfo) node.getUserObject();
-		loadLazyData(node, dbInfo, false);
+		treeDbs.expandPath(new TreePath(node.getPath()));
+		//loadLazyData(node, dbInfo, false);
 		String dataSourceKey = ((DefaultMutableTreeNode) node.getParent()).getUserObject().toString();
 		EventManager.getInstance().fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
 	}//GEN-LAST:event_btnConnectActionPerformed
@@ -271,8 +274,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		if (node == null)
 			return;
 		DbInfo dbInfo = (DbInfo) node.getUserObject();
-		loadLazyData(node, dbInfo, true);
-		EventManager.getInstance().fireEvent(DB_INFO_UPDATED, dbInfo);
+		loadLazyData(node, dbInfo, true);		
 	}//GEN-LAST:event_refreshActionPerformed
 
 	private void btnScriptActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnScriptActionPerformed
@@ -324,76 +326,25 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private javax.swing.JTree treeDbs;
     // End of variables declaration//GEN-END:variables
 
+
 	private void loadLazyData(DefaultMutableTreeNode dbNode, DbInfo dbInfo, boolean forceRefresh)
 	{
 		if (dbInfo.isLazyDataLoaded() && !forceRefresh)
 			return;
-		try
-		{
-			String dataSourceKey = ((DefaultMutableTreeNode) dbNode.getParent()).getUserObject().toString();
-			DataSource dataSource = dataSourceSupplier.getDataSourceByDbId(dataSourceKey);
-			DbInfoDAO dao = new DbInfoDAO(dataSource);
-			dao.refreshDbInfo(dbInfo);
 
-			int childCount = treeModel.getChildCount(dbNode);
-			for (int i = childCount-1; i >=0 ; i--)			
-				treeModel.removeNodeFromParent((DefaultMutableTreeNode)treeModel.getChild(dbNode, i));		
-			
-			int i = 0;
-			DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
-			for (Table table : dbInfo.getTables())
-			{
-				DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
-				for (Column column : table.getColumns())
-					tableNode.add(new DefaultMutableTreeNode(column));
-				if(table.getIndexes()!= null)
-				{
-					DefaultMutableTreeNode indexes = new DefaultMutableTreeNode("Indexes");
-					tableNode.add(indexes);
-					for (Index index : table.getIndexes())
-						indexes.add(new DefaultMutableTreeNode(index));
-				}	
-					
-				tables.add(tableNode);
-			}
-			treeModel.insertNodeInto(tables, dbNode, i++);
+		DataSource dataSource = getDataSourceForNode(dbNode);
+		LazyDataLoader dataLoader = new LazyDataLoader(dataSource, dbInfo, dbNode);
 
-			DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
-			for (Procedure procedure : dbInfo.getProcedures())
-			{
-				DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
-				for(Parameter parameter : procedure.getParameters())
-					procedureNode.add(new DefaultMutableTreeNode(parameter));
-				procedures.add(procedureNode);
-			}
-			treeModel.insertNodeInto(procedures, dbNode, i++);
-
-			DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
-			for (View view : dbInfo.getViews())
-			{
-				DefaultMutableTreeNode viewNode = new DefaultMutableTreeNode(view);
-				for (Column column : view.getColumns())				
-					viewNode.add(new DefaultMutableTreeNode(column));
-				views.add(viewNode);
-			}
-			treeModel.insertNodeInto(views, dbNode, i++);
-
-			DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
-			for (Function function : dbInfo.getFunctions())
-			{
-				DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
-				for(Parameter parameter : function.getParameters())
-					functionsNode.add(new DefaultMutableTreeNode(parameter));
-				functions.add(functionsNode);
-			}
-				
-			treeModel.insertNodeInto(functions, dbNode, i++);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+		dataLoader.execute();
 	}
+
+
+	private DataSource getDataSourceForNode(DefaultMutableTreeNode dbNode)
+	{
+		String dataSourceKey = ((DefaultMutableTreeNode) dbNode.getParent()).getUserObject().toString();
+		return dataSourceSupplier.getDataSourceByDbId(dataSourceKey);
+	}
+
 
 	private class NodeExpansionListener implements TreeExpansionListener
 	{
@@ -403,9 +354,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) tee.getPath().getLastPathComponent();
 			Object userObject = node.getUserObject();
 			if (userObject instanceof DbInfo)
-			{
 				loadLazyData(node, (DbInfo) node.getUserObject(), false);
-			}
 		}
 
 		@Override
@@ -447,4 +396,96 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			}
 		}
 	}
+
+
+	private class LazyDataLoader extends SwingWorker<DbInfo, Void>{
+
+		DataSource dataSource;
+		DbInfo dbInfo;
+		DefaultMutableTreeNode dbNode;
+
+		public LazyDataLoader(DataSource ds, DbInfo dbInfo, DefaultMutableTreeNode dbNode)
+		{
+			this.dataSource = ds;
+			this.dbInfo = dbInfo;
+			this.dbNode = dbNode;
+		}
+
+		@Override
+		protected DbInfo doInBackground()
+		{
+			try
+			{
+				DbInfoDAO dao = new DbInfoDAO(dataSource);
+				dao.refreshDbInfo(dbInfo);
+			}
+			catch (SQLException ex)
+			{
+				throw new BetaDbException("Error loading db info");
+			}
+			return dbInfo;
+		}
+
+		@Override
+        public void done()
+		{
+			int childCount = treeModel.getChildCount(dbNode);
+			for (int i = childCount - 1; i >= 0; i--)
+				treeModel.removeNodeFromParent((DefaultMutableTreeNode) treeModel.getChild(dbNode, i));
+
+			int i = 0;
+			DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
+			for (Table table : dbInfo.getTables())
+			{
+				DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
+				for (Column column : table.getColumns())
+					tableNode.add(new DefaultMutableTreeNode(column));
+				if(table.getIndexes()!= null)
+				{
+					DefaultMutableTreeNode indexes = new DefaultMutableTreeNode("Indexes");
+					tableNode.add(indexes);
+				}
+
+				tables.add(tableNode);
+			}
+			treeModel.insertNodeInto(tables, dbNode, i++);
+
+			DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
+			for (Procedure procedure : dbInfo.getProcedures())
+			{
+				DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
+				for(Parameter parameter : procedure.getParameters())
+					procedureNode.add(new DefaultMutableTreeNode(parameter));
+				procedures.add(procedureNode);
+			}
+			treeModel.insertNodeInto(procedures, dbNode, i++);
+
+			DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
+			for (View view : dbInfo.getViews())
+			{
+				DefaultMutableTreeNode viewNode = new DefaultMutableTreeNode(view);
+				for (Column column : view.getColumns())
+					viewNode.add(new DefaultMutableTreeNode(column));
+				views.add(viewNode);
+			}
+			treeModel.insertNodeInto(views, dbNode, i++);
+
+			DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
+			for (Function function : dbInfo.getFunctions())
+			{
+				DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
+				for(Parameter parameter : function.getParameters())
+					functionsNode.add(new DefaultMutableTreeNode(parameter));
+				functions.add(functionsNode);
+			}
+
+			treeModel.insertNodeInto(functions, dbNode, i++);
+
+			treeDbs.expandPath(new TreePath(dbNode.getPath()));
+			EventManager.getInstance().fireEvent(DB_INFO_UPDATED, dbInfo);
+
+		}
+
+	}
+
 }
