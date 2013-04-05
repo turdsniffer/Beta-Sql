@@ -46,10 +46,10 @@ public class TextEditorUtils
 		while (matcher.find())
 		{
 			if (matcher.start() >= caretPosition)
-				return textComponent.getText().substring(prevBlankLineIndex, matcher.start()).toLowerCase();
+				return textComponent.getText().substring(prevBlankLineIndex, matcher.start());
 			prevBlankLineIndex = matcher.start();
 		}
-		return text.substring(prevBlankLineIndex, text.length()).toLowerCase();
+		return text.substring(prevBlankLineIndex, text.length());
 	}
 
 	public static String getCurrentWord(Pair<Integer, Integer> wordBounds, JTextComponent textComponent)

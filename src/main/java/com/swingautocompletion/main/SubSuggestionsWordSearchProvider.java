@@ -1,8 +1,6 @@
 package com.swingautocompletion.main;
 
 import com.swingautocompletion.util.TextEditorUtils;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -19,7 +17,7 @@ public class SubSuggestionsWordSearchProvider
 {
 	public String[] getWordsToSearchForSubSuggestions(JTextComponent textComponent)
 	{
-		String block = TextEditorUtils.getCurrentTextBlock(textComponent);
+		String block = TextEditorUtils.getCurrentTextBlock(textComponent).toLowerCase();
 
 		if(block == null)
 			return new String[0];
