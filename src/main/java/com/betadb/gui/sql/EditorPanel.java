@@ -69,7 +69,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener
 		autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
 		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
 	}
-
+	
 	public void setSql(String sql)
 	{
 		codeEditor.setText(sql);

@@ -78,5 +78,4 @@ public class DbObject extends AutoCompleteItem
 	{
 		return properties.get(name);
 	}
-	
 }

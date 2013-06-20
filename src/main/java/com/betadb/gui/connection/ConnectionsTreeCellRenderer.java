@@ -1,6 +1,7 @@
 package com.betadb.gui.connection;
 
 import com.betadb.gui.dbobjects.Column;
+import com.betadb.gui.dbobjects.DbObject;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.icons.Icon;
 import java.awt.Component;
@@ -34,9 +35,9 @@ public class ConnectionsTreeCellRenderer extends DefaultTreeCellRenderer
 			Column col = (Column)userObject;
 			setText(col.getName()+" "+col.getDataType()+"("+String.valueOf(col.getDecimalDigits())+")");
 		}
-		else if(userObject instanceof Table)
+		else if(userObject instanceof DbObject)
 		{
-			Table tbl = (Table)userObject;
+			DbObject tbl = (DbObject)userObject;
 			setText(tbl.getSchemaName()+"."+tbl.getName());
 		}
 		

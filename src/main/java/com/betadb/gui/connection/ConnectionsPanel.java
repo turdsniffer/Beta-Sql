@@ -295,7 +295,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		}
 		catch (SQLException ex)
 		{
-			JOptionPane.showInternalMessageDialog(this, ex.getMessage());
+			JOptionPane.showMessageDialog(this, ex.getMessage());
 		}
 	}//GEN-LAST:event_btnScriptActionPerformed
 

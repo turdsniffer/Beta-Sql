@@ -14,24 +14,18 @@ import com.betadb.gui.jdbc.util.ResultSetUtils;
 import com.betadb.gui.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import java.security.interfaces.DSAKey;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.sound.midi.Soundbank;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -244,7 +238,7 @@ public class DbInfoDAO
 	{
 
 
-		String sql = "use " + dbName + "; exec sp_helpText " + dbObject.getName();
+		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." +dbObject.getName()+"'";
 		QueryRunner runner = new QueryRunner(ds);
 		List<String> results = (List) runner.query(sql, new ColumnListHandler());
 		return StringUtils.join(results, "");
