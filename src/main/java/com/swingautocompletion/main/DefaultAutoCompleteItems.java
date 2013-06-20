@@ -13,9 +13,12 @@ public class DefaultAutoCompleteItems
 		List<AutoCompleteItem> items = new ArrayList<AutoCompleteItem>();
 		
 		items.add(new SimpleAutoCompleteItem("ssf", "select * from (alias)", "select * from "));
-		items.add(new SimpleAutoCompleteItem("st100f", "select top 100 * from (alias)", "select top 100 * from "));
+		items.add(new SimpleAutoCompleteItem("selectt100", "select top 100 * from (alias)", "select top 100 * from "));
 		items.add(new SimpleAutoCompleteItem("updateset", "update set (alias)", "update set "));
 		items.add(new SimpleAutoCompleteItem("ii", "insert into values () (alias)", "insert into values ()"));
+		items.add(new SimpleAutoCompleteItem("insert", "insert into values () (alias)", "insert into values ()"));
+		items.add(new SimpleAutoCompleteItem("delete", "Delete from (alias)", "delete from  where"));
+
 		
 		return items;
 	}

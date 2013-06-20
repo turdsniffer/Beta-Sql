@@ -38,8 +38,7 @@ public class AutoCompletePopup extends JWindow
 	private PopupListModel model;
 	private List<AutoCompleteItem> items;
 	private Set<AutoCompleteItem> subSuggestions;
-	private JTextComponent textComponent;
-	private Pair<Integer, Integer> currentWordBounds;
+	private JTextComponent textComponent;	
 	private List<AutoCompleteHandler> autoCompleteHandlers;
 	private SearchStrategy searchStrategy;
 	private SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider;
@@ -109,8 +108,6 @@ public class AutoCompletePopup extends JWindow
 					
 					addSubSuggestions();
 					updateAutoComplete();
-//					if(model.getSize()==1)
-//						insertSelectedItem();
 					e.consume();
 				}
 				
@@ -176,9 +173,9 @@ public class AutoCompletePopup extends JWindow
 		int j = 0;
 		for (int i = 0; i < words.length && j < items.size(); i++)
 		{
-			String curWord = words[i];	
+			String curWord = words[i].toLowerCase();
 			AutoCompleteItem item = items.get(j);
-			while (item.getAutoCompleteId().toLowerCase().compareTo(words[i]) <= 0 && j < items.size()-1)
+			while (item.getAutoCompleteId().toLowerCase().compareTo(curWord) <= 0 && j < items.size()-1)
 			{				
 				int compare = item.getAutoCompleteId().toLowerCase().compareTo(curWord);
 				if (compare == 0)
@@ -214,7 +211,7 @@ public class AutoCompletePopup extends JWindow
 	public void updateAutoComplete()
 	{
 		updatePosition();
-		currentWordBounds = TextEditorUtils.getWordBounds(textComponent, TextEditorUtils.ExpansionDirection.LEFT);
+		Pair<Integer, Integer> currentWordBounds = TextEditorUtils.getWordBounds(textComponent, TextEditorUtils.ExpansionDirection.LEFT);
 		String wordPart = TextEditorUtils.getCurrentWord(currentWordBounds, textComponent);
 		model.removeAllElements();
 
@@ -231,13 +228,17 @@ public class AutoCompletePopup extends JWindow
 
 	private void insertSelectedItem()
 	{
-		Integer wordStartIndex = currentWordBounds.getFirst();
-		Integer wordEndIndex = currentWordBounds.getSecond();
 		AutoCompleteItem item = (AutoCompleteItem)list.getSelectedValue();
+		ArrayList wordSeparators = Lists.newArrayList(TextEditorUtils.DEFAULT_WORD_SEPARATORS);
+		if(item.getAutoCompletion().contains("."))//This is a bit of a hack for auto completions that have a . in them.  This is not a robust solution for this.
+			wordSeparators.remove(Character.valueOf('.'));
+
+		Pair<Integer, Integer> replacementWordBounds = TextEditorUtils.getWordBounds(textComponent, wordSeparators, TextEditorUtils.ExpansionDirection.LEFT);
+
 		String autoCompletion = item.getAutoCompletion();
 		
-		textComponent.setSelectionStart(wordStartIndex);
-		textComponent.setSelectionEnd(wordEndIndex);
+		textComponent.setSelectionStart(replacementWordBounds.getFirst());
+		textComponent.setSelectionEnd(replacementWordBounds.getSecond());
 		textComponent.replaceSelection(autoCompletion);	
 		
 		notifyAutoCompleteHandlers(item);
