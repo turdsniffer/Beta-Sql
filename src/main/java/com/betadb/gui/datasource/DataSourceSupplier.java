@@ -33,14 +33,14 @@ public class DataSourceSupplier {
 		return datasourceMap;
 	}
 	
-	public DataSource getDataSource(String dbServerName, String username, String password, String dbName, String domain, String instanceName)
+	public DataSource getDataSource(DatabaseType databaseType, String dbServerName, String username, String password, String dbName, String domain, String instanceName)
 	{
 		DataSource ds = datasourceMap.get(getDataSourceKey(dbServerName, instanceName,""));
 		if(ds==null)
 		{
 			try
 			{
-				ds = initDataAccess(dbServerName, username, password, dbName, domain, instanceName);
+				ds = initDataAccess(databaseType, dbServerName, username, password, dbName, domain, instanceName);
 				datasourceMap.put(getDataSourceKey(dbServerName, instanceName, dbName), ds);
 			}
 			catch (SQLException ex)
@@ -70,7 +70,7 @@ public class DataSourceSupplier {
 	}
 	
 
-	private DataSource initDataAccess(String dbServerName, String username, String password, String dbName, String domain, String instanceName) throws SQLException
+	private DataSource initDataAccess(DatabaseType databaseType, String dbServerName, String username, String password, String dbName, String domain, String instanceName) throws SQLException
 	{
 		BasicDataSource dataSource = null;
 		Connection connection = null;
@@ -85,8 +85,8 @@ public class DataSourceSupplier {
 			};
 			dataSource.setMaxActive( 100 );
 			dataSource.setMaxIdle( 30 );
-			dataSource.setDriverClassName( "net.sourceforge.jtds.jdbc.Driver" );
-			String connectUrl = "jdbc:jtds:sqlserver://"+dbServerName;
+			dataSource.setDriverClassName( databaseType.getDriverClassName() );
+			String connectUrl = databaseType.getUrl()+dbServerName;
 			if(dbName!= null && dbName.length()>0)
 				connectUrl+="/"+dbName;				
 			if(domain != null && domain.length()>0)
@@ -100,11 +100,9 @@ public class DataSourceSupplier {
 			connection = dataSource.getConnection();			
 		}
 		finally
-		{
-		
+		{		
 			if(connection != null)
 				connection.close();
-
 		}
 		return dataSource;
 	}

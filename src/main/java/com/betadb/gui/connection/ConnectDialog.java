@@ -12,6 +12,7 @@ package com.betadb.gui.connection;
 
 import com.betadb.gui.MainWindow;
 import com.betadb.gui.datasource.DataSourceSupplier;
+import com.betadb.gui.datasource.DatabaseType;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventManager;
 import com.google.gson.Gson;
@@ -52,6 +53,9 @@ public class ConnectDialog extends javax.swing.JDialog
 	private ConnectDialog()
 	{
 		initComponents();
+		for (DatabaseType type : DatabaseType.values())
+			cbDatabaseType.addItem(type);
+
 		this.getRootPane().setDefaultButton(btnConnect);
 		prefs = Preferences.userRoot().node(this.getClass().getName());
 		gson = new Gson();
@@ -71,7 +75,8 @@ public class ConnectDialog extends javax.swing.JDialog
 	 */
 	@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -87,6 +92,10 @@ public class ConnectDialog extends javax.swing.JDialog
         lblMsg = new javax.swing.JLabel();
         cbServer = new javax.swing.JComboBox();
         btnDelete = new javax.swing.JButton();
+        txtDbName = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        cbDatabaseType = new javax.swing.JComboBox();
+        jLabel7 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Create Connection");
@@ -100,8 +109,10 @@ public class ConnectDialog extends javax.swing.JDialog
         jLabel3.setText("Password:");
 
         btnConnect.setText("Connect");
-        btnConnect.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnConnect.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnConnectActionPerformed(evt);
             }
         });
@@ -111,19 +122,27 @@ public class ConnectDialog extends javax.swing.JDialog
         jLabel4.setText("Instance Name:");
 
         cbServer.setEditable(true);
-        cbServer.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+        cbServer.addItemListener(new java.awt.event.ItemListener()
+        {
+            public void itemStateChanged(java.awt.event.ItemEvent evt)
+            {
                 cbServerItemStateChanged(evt);
             }
         });
 
         btnDelete.setText("Delete Connection");
         btnDelete.setEnabled(false);
-        btnDelete.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnDelete.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 btnDeleteActionPerformed(evt);
             }
         });
+
+        jLabel6.setText("Database Name:");
+
+        jLabel7.setText("Database Type:");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -133,27 +152,29 @@ public class ConnectDialog extends javax.swing.JDialog
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btnDelete)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnConnect)
+                            .addComponent(lblMsg, javax.swing.GroupLayout.PREFERRED_SIZE, 339, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jLabel3)
                             .addComponent(jLabel2)
                             .addComponent(jLabel5)
                             .addComponent(jLabel1)
-                            .addComponent(jLabel4))
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel6)
+                            .addComponent(jLabel7))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(txtInstanceName)
                             .addComponent(txtDomain)
                             .addComponent(txtPassword)
                             .addComponent(txtUserName)
-                            .addComponent(cbServer, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(btnDelete)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(btnConnect))
-                            .addComponent(lblMsg, javax.swing.GroupLayout.PREFERRED_SIZE, 339, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addComponent(cbServer, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(txtDbName)
+                            .addComponent(cbDatabaseType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -163,6 +184,14 @@ public class ConnectDialog extends javax.swing.JDialog
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(cbServer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cbDatabaseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtDbName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
@@ -210,11 +239,14 @@ public class ConnectDialog extends javax.swing.JDialog
 		String password = new String(txtPassword.getPassword());
 		String domain = txtDomain.getText();
 		String instanceName = txtInstanceName.getText();
+		String dbName = txtDbName.getText().isEmpty() ? null : txtDbName.getText();
+		DatabaseType databaseType = (DatabaseType)cbDatabaseType.getSelectedItem();
+
 		try
 		{
-			instance.getDataSource(server, userName, password, null, domain, instanceName);
+			instance.getDataSource(databaseType, server, userName, password, dbName, domain, instanceName);
 			this.setVisible(false);
-			EventManager.getInstance().fireEvent(Event.DATA_SOURCE_ADDED, instance.getDataSourceKey(server, instanceName, ""));
+			EventManager.getInstance().fireEvent(Event.DATA_SOURCE_ADDED, instance.getDataSourceKey(server, instanceName, dbName));
 			saveConnectionToPreferences(server, userName, domain, instanceName);
 		} catch (Exception e)
 		{
@@ -316,14 +348,18 @@ public class ConnectDialog extends javax.swing.JDialog
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnConnect;
     private javax.swing.JButton btnDelete;
+    private javax.swing.JComboBox cbDatabaseType;
     private javax.swing.JComboBox cbServer;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JLabel lblMsg;
+    private javax.swing.JTextField txtDbName;
     private javax.swing.JTextField txtDomain;
     private javax.swing.JTextField txtInstanceName;
     private javax.swing.JPasswordField txtPassword;
