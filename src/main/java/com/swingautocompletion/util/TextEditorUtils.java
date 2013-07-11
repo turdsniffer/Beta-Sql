@@ -3,6 +3,8 @@ package com.swingautocompletion.util;
 import com.google.common.collect.Lists;
 import java.awt.Color;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.text.BadLocationException;
@@ -10,6 +12,7 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
+import javax.swing.text.Utilities;
 
 /**
  * @author parmstrong
@@ -34,11 +37,12 @@ public class TextEditorUtils
 	public static String getCurrentTextBlock(JTextComponent textComponent)
 	{
 		// Compile the pattern
-		String patternStr = "^\\s*$";
-		Pattern pattern = Pattern.compile(patternStr, Pattern.MULTILINE);
+		String patternStr = "(?m)^\\s*?$";
+		Pattern pattern = Pattern.compile(patternStr);
 		String text = textComponent.getText();
 		Matcher matcher = pattern.matcher(text);
 		int caretPosition = textComponent.getCaretPosition();
+
 		// Read the paragraphs
 		int prevBlankLineIndex = 0;
 		while (matcher.find())
