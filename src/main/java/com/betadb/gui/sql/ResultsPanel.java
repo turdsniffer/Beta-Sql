@@ -15,7 +15,7 @@ import com.betadb.gui.datasource.DataSourceSupplier;
 import com.betadb.gui.datasource.SQLUtils;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.jdbc.util.ResultSetUtils;
-import com.betadb.gui.table.util.ZebraTableRenderer;
+import com.betadb.gui.table.util.renderer.RendererUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -25,7 +25,6 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +39,8 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  *
@@ -101,35 +102,48 @@ public class ResultsPanel extends javax.swing.JPanel
 
 	private Component getResultsTable(ResultSet rs) throws SQLException
 	{
-
-		String[] columnNames = ResultSetUtils.getColumnNames(rs);
-		Class[] columnClasses = ResultSetUtils.getColumnClasses(rs);
+		List<String> columnNames = ResultSetUtils.getColumnNames(rs);
+		List<Class> columnClasses = ResultSetUtils.getColumnClasses(rs);
 
 		ArrayList<Object[]> data = new ArrayList<Object[]>();
 		Object[] row;
 
+
 		while (rs.next())
 		{
-			row = new Object[columnNames.length];
+			row = new Object[columnNames.size()];
 			for (int i = 1; i <= row.length; i++)
-			{
 				row[i - 1] = rs.getObject(i);
-			}
+			
 			data.add(row);
 		}
 
 		ResultsTableModel resultsTableModel = new ResultsTableModel(columnNames, columnClasses, data);
 
 
-		JTable table = new JTable(resultsTableModel);
+		final JTable table = new JTable(resultsTableModel);
 		table.setTransferHandler(new ResultsTableTransferHandler());
 		table.setAutoCreateRowSorter(true);
-		table.setColumnSelectionAllowed(true);
+		table.setCellSelectionEnabled(true);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		RowNumberColumnMouseListener rowNumberColumnMouseListener = new RowNumberColumnMouseListener();
+		table.addMouseListener(rowNumberColumnMouseListener);
+		table.addMouseMotionListener(rowNumberColumnMouseListener);
 
-		table.setComponentPopupMenu(new ResultTablePopup());
-		for (Class clas : columnClasses)
-			table.setDefaultRenderer(clas, new ZebraTableRenderer());
+		table.setComponentPopupMenu(new ResultTablePopup());	
+		RendererUtils.formatColumns(table, new ResultsPanelTableCellRenderer());
+		table.getColumnModel().getColumn(0).setPreferredWidth(40);
+		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();
+		table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener()
+		{
+			@Override
+			public void valueChanged(ListSelectionEvent event)
+			{
+				if(selectionModel.isSelectedIndex(table.convertColumnIndexToView(0)))
+					selectionModel.removeSelectionInterval(table.convertColumnIndexToView(0), table.convertColumnIndexToView(0));
+			}
+		});
+
 
 		JPanel resultsPanel = new JPanel();
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.PAGE_AXIS));
@@ -146,9 +160,6 @@ public class ResultsPanel extends javax.swing.JPanel
 		return resultsPanel;
 	}
 
-	
-
-	
 
 	public void cancelQuery()
 	{		

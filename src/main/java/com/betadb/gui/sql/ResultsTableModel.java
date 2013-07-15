@@ -3,6 +3,7 @@ package com.betadb.gui.sql;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.AbstractTableModel;
@@ -12,22 +13,32 @@ import javax.swing.table.AbstractTableModel;
  */
 public class ResultsTableModel extends AbstractTableModel
 {
-	private String[] columnNames;
+	private List<String> columnNames;
 	private ArrayList<Object[]> data;
-	private Class[] columnClasses;
+	private List<Class> columnClasses;
 
 
-	public ResultsTableModel(String[] columnNames, Class[] columnClasses, ArrayList<Object[]> data)
+	public ResultsTableModel(List<String> columnNames, List<Class> columnClasses, ArrayList<Object[]> data)
 	{
 		this.columnNames = columnNames;
 		this.columnClasses = columnClasses;
 		this.data = data;
+		addRowCountColumn();
+	}
+
+	private void addRowCountColumn()
+	{
+		columnNames.add(0, "");
+		columnClasses.add(0, Integer.class);
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex)
 	{
-		Object obj = data.get(rowIndex)[columnIndex];
+		if(columnIndex == 0)
+			return rowIndex;
+
+		Object obj = data.get(rowIndex)[columnIndex-1];
 		if (obj instanceof Clob)
 		{
 			try
@@ -52,14 +63,14 @@ public class ResultsTableModel extends AbstractTableModel
 	@Override
 	public Class getColumnClass(int columnIndex)
 	{
-		return columnClasses[columnIndex] == null ? Object.class : columnClasses[columnIndex];
+		return columnClasses.get(columnIndex) == null ? Object.class : columnClasses.get(columnIndex);
 	}
 
 
 	@Override
 	public int getColumnCount()
 	{
-		return columnNames.length;
+		return columnNames.size();
 	}
 
 	@Override
@@ -71,6 +82,6 @@ public class ResultsTableModel extends AbstractTableModel
 	@Override
 	public String getColumnName(int column)
 	{
-		return columnNames[column];
+		return columnNames.get(column);
 	}
 }

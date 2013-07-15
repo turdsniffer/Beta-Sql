@@ -5,6 +5,8 @@ import com.google.common.collect.Maps;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,30 +14,31 @@ import java.util.Map;
  */
 public class ResultSetUtils
 {
-	public static String[] getColumnNames(ResultSet rs) throws SQLException
+	public static List<String> getColumnNames(ResultSet rs) throws SQLException
 	{
 		ResultSetMetaData metaData = rs.getMetaData();
 
 		int numColumns = metaData.getColumnCount();
-		String[] columns = new String[numColumns];
+		List<String> columns = new ArrayList<String>(numColumns);
 
 		for (int i = 1; i < numColumns + 1; i++)
-			columns[i - 1] = metaData.getColumnName(i);
+			columns.add(i - 1, metaData.getColumnName(i));
 
 		return columns;
 	}
 
-	public static Class[] getColumnClasses(ResultSet rs) throws SQLException
+	public static List<Class> getColumnClasses(ResultSet rs) throws SQLException
 	{
 		ResultSetMetaData metaData = rs.getMetaData();
 
 		int numColumns = metaData.getColumnCount();
-		Class[] classes = new Class[numColumns];
+
+		List<Class> classes = new ArrayList<Class>();
 		for (int i = 1; i < numColumns + 1; i++)
 		{
 			try
 			{
-				classes[i - 1] = Class.forName(metaData.getColumnClassName(i));
+				classes.add(i - 1, Class.forName(metaData.getColumnClassName(i)));
 			}
 			catch (ClassNotFoundException ex)
 			{
@@ -54,10 +57,10 @@ public class ResultSetUtils
 	public static Map<String,String> getRowAsProperties(ResultSet rs) throws SQLException
 	{
 		Map<String,String> properties = Maps.newHashMap();
-		String[] columnNames = getColumnNames(rs);
+		List<String> columnNames = getColumnNames(rs);
 
-		for (int i = 1; i <= columnNames.length; i++)
-			properties.put(columnNames[i-1], String.valueOf(rs.getObject(i))) ;
+		for (int i = 1; i <= columnNames.size(); i++)
+			properties.put(columnNames.get(i-1), String.valueOf(rs.getObject(i))) ;
 
 		return properties;
 	}
