@@ -22,8 +22,9 @@ public class PropertiesWindow extends JWindow
 {
 	PropertiesTableModel propertiesTableModel;
 
-	public PropertiesWindow(AutoCompletePopup parent)
+	public PropertiesWindow(final AutoCompletePopup parent)
 	{
+
 		parent.addComponentListener(new ComponentAdapter()
 		{
 			@Override
@@ -36,7 +37,7 @@ public class PropertiesWindow extends JWindow
 			public void componentMoved(ComponentEvent ce)
 			{
 				Point point = ce.getComponent().getLocation();
-				point.x=point.x+200;
+				point.x=point.x+parent.getWidth();
 				
 				PropertiesWindow.this.setLocation(point);			
 			}

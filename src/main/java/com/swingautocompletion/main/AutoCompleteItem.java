@@ -10,18 +10,24 @@ import java.util.Map;
  */
 public abstract class AutoCompleteItem implements Comparable<AutoCompleteItem>
 {
+	/**
+	 * text to search for when a user begins to type
+	 */
 	public abstract String getAutoCompleteId();
 	
 	public String getDescription()
 	{
 		return "";
 	}
-	
+
+	/**
+	 * text to insert upon selecting this auto complete item
+	 */
 	public String getAutoCompletion()
 	{
 		return getAutoCompleteId();
 	}
-	
+
 	/**
 	 * extra display information about this auto complete item to be displayed when highlighted.	 
 	 */

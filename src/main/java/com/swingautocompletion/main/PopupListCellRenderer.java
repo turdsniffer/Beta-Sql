@@ -31,7 +31,7 @@ public class PopupListCellRenderer extends DefaultListCellRenderer
 		
 		AutoCompleteItem item = (AutoCompleteItem)value;
 		
-		this.setText(item.getAutoCompleteId() +" "+ item.getDescription());	
+		this.setText(item.getAutoCompleteId() +" ("+ item.getDescription()+")");
 			
         return this;
 	}

@@ -43,6 +43,7 @@ public class AutoCompletePopup extends JWindow
 	private SearchStrategy searchStrategy;
 	private SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider;
 	private PropertiesWindow propertiesWindow;
+	private final Dimension dimension = new Dimension(250, 200);
 
 	public AutoCompletePopup(JTextComponent textComponent)
 	{
@@ -83,7 +84,7 @@ public class AutoCompletePopup extends JWindow
 			}
 		});
 		
-		this.setPreferredSize(new Dimension(200, 200));
+		this.setPreferredSize(dimension);
 		this.add(jScrollPane);
 		this.doLayout();
 		pack();
@@ -189,6 +190,11 @@ public class AutoCompletePopup extends JWindow
 	public void setAutoCompletePossibilties(List<? extends AutoCompleteItem> items)
 	{
 		this.items = new ArrayList<AutoCompleteItem>(items);		
+		this.sortSuggestions();
+	}
+
+	private void sortSuggestions()
+	{
 		Collections.sort(this.items);
 	}
 
