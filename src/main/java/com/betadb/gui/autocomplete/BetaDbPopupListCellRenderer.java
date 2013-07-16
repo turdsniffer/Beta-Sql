@@ -12,6 +12,7 @@ import javax.swing.JList;
  */
 public class BetaDbPopupListCellRenderer extends PopupListCellRenderer
 {
+
 	@Override
 	public Component getListCellRendererComponent(
 			JList list,
@@ -31,8 +32,10 @@ public class BetaDbPopupListCellRenderer extends PopupListCellRenderer
         }		
 		
 		AutoCompleteItem item = (AutoCompleteItem)value;
-		
-		this.setText(item.getAutoCompleteId() +" "+ item.getDescription());	
+
+
+		//this.setText("<html>"+item.getAutoCompleteId() +" <FONT size=-2 COLOR=\"#00FFFF\">"+ item.getDescription()+"</FONT></html>");
+		this.setText(item.getAutoCompleteId() +" ("+ item.getDescription()+")");
 		setIcon(Icon.getIcon(value.getClass()));
 			
         return this;

@@ -124,12 +124,12 @@ public class DbInfoDAO
 			Connection conn;
 			try
 			{
-				conn = ds.getConnection();
+				conn = ds.getConnection();				
 				DatabaseMetaData metaData = conn.getMetaData();
 				ListMultimap<DbObjectKey, Column> columns = getColumns(metaData, dbInfo.getDbName());
 				Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, dbInfo.getDbName(), columns);
 				dbInfo.setTables(tablesAndViewsPair.getFirst());
-				dbInfo.setViews(tablesAndViewsPair.getSecond());
+				dbInfo.setViews(tablesAndViewsPair.getSecond());				
 			}
 			catch (SQLException ex)
 			{
@@ -137,8 +137,6 @@ public class DbInfoDAO
 			}
 		}
 	}
-
-
 
 	private Pair<List<Table>, List<View>> getTablesAndViews(DatabaseMetaData databaseMetaData, String dbName, ListMultimap<DbObjectKey, Column> columns) throws SQLException
 	{

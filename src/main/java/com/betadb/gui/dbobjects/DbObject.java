@@ -47,8 +47,6 @@ public class DbObject extends AutoCompleteItem
 		return getName();
 	}
 
-
-
 	public String getSchemaName()
 	{
 		return schemaName;
@@ -77,5 +75,11 @@ public class DbObject extends AutoCompleteItem
 	public Object getProperty(String name)
 	{
 		return properties.get(name);
+	}
+
+	@Override
+	public String getDescription()
+	{
+		return getSchemaName();
 	}
 }

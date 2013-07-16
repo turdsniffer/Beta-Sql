@@ -105,45 +105,10 @@ public class ResultsPanel extends javax.swing.JPanel
 		List<String> columnNames = ResultSetUtils.getColumnNames(rs);
 		List<Class> columnClasses = ResultSetUtils.getColumnClasses(rs);
 
-		ArrayList<Object[]> data = new ArrayList<Object[]>();
-		Object[] row;
-
-
-		while (rs.next())
-		{
-			row = new Object[columnNames.size()];
-			for (int i = 1; i <= row.length; i++)
-				row[i - 1] = rs.getObject(i);
-			
-			data.add(row);
-		}
+		ArrayList<Object[]> data = getData(rs, columnNames);
 
 		ResultsTableModel resultsTableModel = new ResultsTableModel(columnNames, columnClasses, data);
-
-
-		final JTable table = new JTable(resultsTableModel);
-		table.setTransferHandler(new ResultsTableTransferHandler());
-		table.setAutoCreateRowSorter(true);
-		table.setCellSelectionEnabled(true);
-		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		RowNumberColumnMouseListener rowNumberColumnMouseListener = new RowNumberColumnMouseListener();
-		table.addMouseListener(rowNumberColumnMouseListener);
-		table.addMouseMotionListener(rowNumberColumnMouseListener);
-
-		table.setComponentPopupMenu(new ResultTablePopup());	
-		RendererUtils.formatColumns(table, new ResultsPanelTableCellRenderer());
-		table.getColumnModel().getColumn(0).setPreferredWidth(40);
-		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();
-		table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener()
-		{
-			@Override
-			public void valueChanged(ListSelectionEvent event)
-			{
-				if(selectionModel.isSelectedIndex(table.convertColumnIndexToView(0)))
-					selectionModel.removeSelectionInterval(table.convertColumnIndexToView(0), table.convertColumnIndexToView(0));
-			}
-		});
-
+		JTable table = createConfiguredResultsTable(resultsTableModel);
 
 		JPanel resultsPanel = new JPanel();
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.PAGE_AXIS));
@@ -158,6 +123,50 @@ public class ResultsPanel extends javax.swing.JPanel
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		return resultsPanel;
+	}
+
+
+	private JTable createConfiguredResultsTable(ResultsTableModel resultsTableModel)
+	{
+		final JTable table = new JTable(resultsTableModel);
+		table.setTransferHandler(new ResultsTableTransferHandler());
+		table.setAutoCreateRowSorter(true);
+		table.setCellSelectionEnabled(true);
+		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		RowNumberColumnMouseListener rowNumberColumnMouseListener = new RowNumberColumnMouseListener();
+		table.addMouseListener(rowNumberColumnMouseListener);
+		table.addMouseMotionListener(rowNumberColumnMouseListener);
+
+		table.setComponentPopupMenu(new ResultTablePopup());
+		RendererUtils.formatColumns(table, new ResultsPanelTableCellRenderer());
+		table.getColumnModel().getColumn(0).setPreferredWidth(40);
+		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();
+		table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener()
+		{
+			@Override
+			public void valueChanged(ListSelectionEvent event)
+			{
+				if(selectionModel.isSelectedIndex(table.convertColumnIndexToView(0)))
+					selectionModel.removeSelectionInterval(table.convertColumnIndexToView(0), table.convertColumnIndexToView(0));
+			}
+		});
+		return table;
+	}
+
+	private ArrayList<Object[]> getData(ResultSet rs, List<String> columnNames) throws SQLException
+	{
+		ArrayList<Object[]> data = new ArrayList<Object[]>();
+		Object[] row;
+
+		while (rs.next())
+		{
+			row = new Object[columnNames.size()];
+			for (int i = 1; i <= row.length; i++)
+				row[i - 1] = rs.getObject(i);
+
+			data.add(row);
+		}
+		return data;
 	}
 
 

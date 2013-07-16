@@ -20,7 +20,7 @@ import com.betadb.gui.events.EventManager;
 import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
-import com.swingautocompletion.main.DefaultAutoCompleteItems;
+import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
 import com.swingautocompletion.util.TextEditorUtils;
 import java.util.ArrayList;
 import java.util.List;
