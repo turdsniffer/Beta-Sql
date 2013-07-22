@@ -2,7 +2,6 @@ package com.betadb.gui.sql;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
 import javax.swing.JTable;
 
 /**
@@ -31,9 +30,10 @@ public class RowNumberColumnMouseListener extends MouseAdapter
 		int row = table.rowAtPoint(event.getPoint());
 		int col = table.columnAtPoint(event.getPoint());
 		if(table.convertColumnIndexToModel(col)==0)//They have clicked on the row number button
-		{			
-			table.addRowSelectionInterval(row, row);
-			table.setColumnSelectionInterval(0, table.getColumnCount()-1);		
+		{				
+			table.addRowSelectionInterval(row-1, row);
+			table.setColumnSelectionInterval(0, table.getColumnCount()-1);
+				
 		}
 	}
 }

@@ -1,5 +1,6 @@
 package com.betadb.gui.dbobjects;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,11 @@ public class Index extends DbObject
 
 	private List<Column> columns;
 	private int id;//this is the id of the index on the table it has been created on
+
+	public Index()
+	{
+		columns = new ArrayList<Column>();
+	}
 
 	public int getId()
 	{
@@ -35,6 +41,7 @@ public class Index extends DbObject
 	private String getColumnsString()
 	{
 		StringBuilder columnString = new StringBuilder();
+
 		for (Column column : columns)
 			columnString.append(column.getName()+", ");
 		if(columnString.length() > 0)
@@ -45,8 +52,9 @@ public class Index extends DbObject
 	public Map<String,String> getProperties()
 	{
 		Map<String, String> properties = super.getProperties();
-		
-		properties.put("Columns", getColumnsString());
+
+		if(columns.size() > 0)
+			properties.put("Columns", getColumnsString());
 		
 		return properties;		
 	}

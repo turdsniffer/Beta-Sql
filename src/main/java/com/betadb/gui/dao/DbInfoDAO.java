@@ -4,7 +4,6 @@ import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
 import com.betadb.gui.dbobjects.Index;
-import com.betadb.gui.dbobjects.IndexColumn;
 import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
@@ -28,7 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,7 +37,6 @@ public class DbInfoDAO
 {
 	DataSource ds;
 	ListeningExecutorService threadPool;
-
 
 	//add query from sys.system_objects, sys.system_columns for system views and stored procs
 	public DbInfoDAO(DataSource ds)
@@ -67,11 +64,11 @@ public class DbInfoDAO
 	public DbInfo refreshDbInfo(DbInfo info) throws SQLException
 	{
 		try
-		{			
+		{
 			threadPool.submit(new ProcedureLoader(info));
 			threadPool.submit(new TableLoader(info));
 			threadPool.shutdown();
-			threadPool.awaitTermination(30, TimeUnit.SECONDS);			
+			threadPool.awaitTermination(30, TimeUnit.SECONDS);
 			info.setLazyDataLoaded(true);
 			return info;
 		}
@@ -124,12 +121,12 @@ public class DbInfoDAO
 			Connection conn;
 			try
 			{
-				conn = ds.getConnection();				
+				conn = ds.getConnection();
 				DatabaseMetaData metaData = conn.getMetaData();
 				ListMultimap<DbObjectKey, Column> columns = getColumns(metaData, dbInfo.getDbName());
 				Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, dbInfo.getDbName(), columns);
 				dbInfo.setTables(tablesAndViewsPair.getFirst());
-				dbInfo.setViews(tablesAndViewsPair.getSecond());				
+				dbInfo.setViews(tablesAndViewsPair.getSecond());
 			}
 			catch (SQLException ex)
 			{
@@ -159,13 +156,11 @@ public class DbInfoDAO
 			table.setSchemaName(rs.getString("TABLE_SCHEM"));
 			table.setName(rs.getString("TABLE_NAME"));
 			table.setProperties(ResultSetUtils.getRowAsProperties(rs));
-			table.setColumns(columns.get(new DbObjectKey(dbName, table.getSchemaName(), table.getName())));			
+			table.setColumns(columns.get(new DbObjectKey(dbName, table.getSchemaName(), table.getName())));
 		}
 
 		return new Pair<List<Table>, List<View>>(tables, views);
 	}
-
-
 
 	private ListMultimap<DbObjectKey, Column> getColumns(DatabaseMetaData databaseMetaData, String catalog) throws SQLException
 	{
@@ -190,7 +185,7 @@ public class DbInfoDAO
 		List<Procedure> results = new ArrayList<Procedure>();
 
 		ResultSet rs = databaseMetaData.getProcedures(dbName, null, null);
-		while(rs.next())
+		while (rs.next())
 		{
 			Procedure procedure = new Procedure();
 			String name = rs.getString("PROCEDURE_NAME");
@@ -203,7 +198,7 @@ public class DbInfoDAO
 
 		return results;
 	}
-	
+
 	//here if the name has a semicolon it is a grouping for jtds and should be removed this is already what jtds does with ;1's at the end of a name
 	//but we have some ;0's
 	private String cleanUpName(String name)
@@ -219,9 +214,9 @@ public class DbInfoDAO
 		ResultSet rs = metaData.getProcedureColumns(dbName, null, null, null);
 		ListMultimap<DbObjectKey, Parameter> parameterMap = ArrayListMultimap.create();
 
-		while(rs.next())
+		while (rs.next())
 		{
-			if(rs.getShort("COLUMN_TYPE")!=1)
+			if (rs.getShort("COLUMN_TYPE") != 1)
 				continue;
 			Parameter parameter = new Parameter();
 			parameter.setName(rs.getString("COLUMN_NAME"));
@@ -230,13 +225,11 @@ public class DbInfoDAO
 			parameterMap.put(new DbObjectKey(dbName, parameter.getSchemaName(), rs.getString("PROCEDURE_NAME")), parameter);
 		}
 		return parameterMap;
-	}	
+	}
 
 	public String getScript(DbObject dbObject, String dbName) throws SQLException
 	{
-
-
-		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." +dbObject.getName()+"'";
+		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." + dbObject.getName() + "'";
 		QueryRunner runner = new QueryRunner(ds);
 		List<String> results = (List) runner.query(sql, new ColumnListHandler());
 		return StringUtils.join(results, "");
@@ -245,27 +238,26 @@ public class DbInfoDAO
 	public List<Index> getIndexes(String dbName, Table table) throws SQLException
 	{
 		List<Index> indexes = new ArrayList<Index>();
-
-
-		Index i = new Index();
-		i.setName("hello");
-
+		Connection conn;
+		try
+		{
+			conn = ds.getConnection();
+			DatabaseMetaData metaData = conn.getMetaData();
+			ResultSet rs = metaData.getIndexInfo(dbName, table.getSchemaName(), table.getName(), false, false);
+			while (rs.next())
+			{
+				Index index = new Index();
+				index.setName(rs.getString("Index_Name"));
+				index.setSchemaName(rs.getString("TABLE_SCHEM"));
+				index.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				indexes.add(index);
+			}
+		}
+		catch (SQLException ex)
+		{
+			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+		}
 		return indexes;
-	}
-
-	private ListMultimap<Pair<Integer, Integer>, IndexColumn> getIndexColumns(Connection conn, String dbName) throws SQLException
-	{
-		ListMultimap<Pair<Integer, Integer>, IndexColumn> retVal = ArrayListMultimap.create();
-
-		String sql = "use " + dbName + "; "
-					 + "select object_id as objectId, index_id as indexId, column_id as columnId, index_column_id as indexColumnId from sys.index_columns order by object_id, index_column_id";
-		QueryRunner runner = new QueryRunner(ds);
-
-		List<IndexColumn> results = runner.query(conn, sql, new BeanListHandler<IndexColumn>(IndexColumn.class));
-		for (IndexColumn indexColumn : results)
-			retVal.put(new Pair<Integer, Integer>(indexColumn.getObjectId(), indexColumn.getIndexId()), indexColumn);
-
-		return retVal;
 	}
 
 	private class DbObjectKey
