@@ -43,7 +43,7 @@ public class AutoCompletePopup extends JWindow
 	private SearchStrategy searchStrategy;
 	private SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider;
 	private PropertiesWindow propertiesWindow;
-	private final Dimension dimension = new Dimension(250, 200);
+	private final Dimension dimension = new Dimension(300, 200);
 
 	public AutoCompletePopup(JTextComponent textComponent)
 	{
