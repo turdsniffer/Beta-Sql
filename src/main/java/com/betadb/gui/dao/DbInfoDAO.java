@@ -252,12 +252,34 @@ public class DbInfoDAO
 				index.setProperties(ResultSetUtils.getRowAsProperties(rs));
 				indexes.add(index);
 			}
+			getTablePrivileges(dbName, table);
 		}
 		catch (SQLException ex)
 		{
 			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
+
 		return indexes;
+	}
+
+	public void getTablePrivileges(String dbName, Table table) throws SQLException
+	{
+
+		Connection conn;
+		try
+		{
+			conn = ds.getConnection();
+			DatabaseMetaData metaData = conn.getMetaData();
+			ResultSet rs = metaData.getTablePrivileges(dbName, table.getSchemaName(), table.getName());
+			while (rs.next())
+			{
+				System.out.println(ResultSetUtils.getRowAsProperties(rs));
+			}
+		}
+		catch (SQLException ex)
+		{
+			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 
 	private class DbObjectKey

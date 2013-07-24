@@ -2,29 +2,21 @@ package com.betadb.gui.connection;
 
 import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.datasource.DataSourceSupplier;
-import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
-import com.betadb.gui.dbobjects.Function;
-import com.betadb.gui.dbobjects.Parameter;
-import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
-import com.betadb.gui.exception.BetaDbException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.sql.DataSource;
 import javax.swing.JOptionPane;
-import javax.swing.SwingWorker;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -67,8 +59,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	private void addDataSource(String dataSourceKey)
 	{
 		try
-		{
-			System.out.println("refreshing db connections");
+		{			
 			DataSource dataSource = dataSourceSupplier.getDataSourceByDbId(dataSourceKey);
 
 			DefaultMutableTreeNode server = new DefaultMutableTreeNode(dataSourceKey);
@@ -92,11 +83,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		DbInfoDAO dao = new DbInfoDAO(dataSource);
 		infos = dao.getDatabases();
 		for (DbInfo dbInfo : infos)
-		{
-			DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(dbInfo);
-			dbNode.add(new DefaultMutableTreeNode("Loading Objects..."));
-			top.add(dbNode);
-		}
+			top.add(new LazyDbInfoNode(dbInfo, dataSource, treeModel, treeDbs));
 	}
 
 	@Override
@@ -249,7 +236,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		DbInfo dbInfo = (DbInfo) node.getUserObject();
+		DbInfo dbInfo = ((LazyDbInfoNode) node).getDbInfo();
 		treeDbs.expandPath(new TreePath(node.getPath()));
 		//loadLazyData(node, dbInfo, false);
 		String dataSourceKey = ((DefaultMutableTreeNode) node.getParent()).getUserObject().toString();
@@ -271,8 +258,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		DbInfo dbInfo = (DbInfo) node.getUserObject();
-		loadLazyData(node, dbInfo, true);
+		LazyLoadNode dbNode = (LazyLoadNode)node;
+		dbNode.load(true);
 	}//GEN-LAST:event_refreshActionPerformed
 
 	private void btnScriptActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnScriptActionPerformed
@@ -303,9 +290,10 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		DbInfo dbInfo = (DbInfo) node.getUserObject();
-		loadLazyData(node, dbInfo, false);
-		FindObjectDialog findObjectDialog = new FindObjectDialog(dbInfo);
+		
+		LazyDbInfoNode dbNode = (LazyDbInfoNode)node;
+		dbNode.load();
+		FindObjectDialog findObjectDialog = new FindObjectDialog(dbNode.getDbInfo());
 		findObjectDialog.setLocationRelativeTo(this);
 		findObjectDialog.setVisible(true);
     }//GEN-LAST:event_btnFindActionPerformed
@@ -323,49 +311,19 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private javax.swing.JTree treeDbs;
     // End of variables declaration//GEN-END:variables
 
-	private void loadLazyData(DefaultMutableTreeNode dbNode, DbInfo dbInfo, boolean forceRefresh)
-	{
-		if (dbInfo.isLazyDataLoaded() && !forceRefresh)
-			return;
-
-		DataSource dataSource = getDataSourceForNode(dbNode);
-		LazyDataLoader dataLoader = new LazyDataLoader(dataSource, dbInfo, dbNode);
-
-		dataLoader.execute();
-	}
-
-	private DataSource getDataSourceForNode(DefaultMutableTreeNode dbNode)
-	{
-		String dataSourceKey = ((DefaultMutableTreeNode) dbNode.getParent()).getUserObject().toString();
-		return dataSourceSupplier.getDataSourceByDbId(dataSourceKey);
-	}
 
 	private class NodeExpansionListener implements TreeExpansionListener
 	{
 		@Override
 		public void treeExpanded(TreeExpansionEvent tee)
 		{
-			try
-			{
-				DefaultMutableTreeNode node = (DefaultMutableTreeNode) tee.getPath().getLastPathComponent();
-				Object userObject = node.getUserObject();
-
-
-				if (userObject instanceof DbInfo)
-					loadLazyData(node, (DbInfo) node.getUserObject(), false);
-				else if (node instanceof LazyLoadNode)
-					((LazyLoadNode) node).load();
-			}
-			catch (SQLException ex)
-			{
-				Logger.getLogger(ConnectionsPanel.class.getName()).log(Level.SEVERE, null, ex);
-			}
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) tee.getPath().getLastPathComponent();
+			if (node instanceof LazyLoadNode)
+				((LazyLoadNode) node).load();
 		}
 
 		@Override
-		public void treeCollapsed(TreeExpansionEvent tee)
-		{
-		}
+		public void treeCollapsed(TreeExpansionEvent tee){}
 	}
 
 	private class NodeMouseListener extends MouseAdapter
@@ -386,7 +344,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 				{
 					DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) selPath.getLastPathComponent();
 					Object userObject = lastPathComponent.getUserObject();
-					if (userObject instanceof DbInfo)
+					if (lastPathComponent instanceof LazyDbInfoNode)
 						dbPopupMenu.show(e.getComponent(), e.getX(), e.getY());
 					if (userObject instanceof DbObject)
 					{
@@ -400,104 +358,5 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 				}
 			}
 		}
-	}
-
-	private class LazyDataLoader extends SwingWorker<DbInfo, Void>
-	{
-		DataSource dataSource;
-		DbInfo dbInfo;
-		DefaultMutableTreeNode dbNode;
-
-		public LazyDataLoader(DataSource ds, DbInfo dbInfo, DefaultMutableTreeNode dbNode)
-		{
-			this.dataSource = ds;
-			this.dbInfo = dbInfo;
-			this.dbNode = dbNode;
-		}
-
-		@Override
-		protected DbInfo doInBackground()
-		{
-			try
-			{
-				DbInfoDAO dao = new DbInfoDAO(dataSource);
-				dao.refreshDbInfo(dbInfo);
-			}
-			catch (SQLException ex)
-			{
-				throw new BetaDbException("Error loading db info");
-			}
-			return dbInfo;
-		}
-
-		@Override
-		public void done()
-		{
-			int childCount = treeModel.getChildCount(dbNode);
-			for (int i = childCount - 1; i >= 0; i--)
-				treeModel.removeNodeFromParent((DefaultMutableTreeNode) treeModel.getChild(dbNode, i));
-
-			int i = 0;
-			addTables(i++);
-			addStoredProcs(i++);
-			addViews(i++);
-			addFunctions(i++);
-			treeDbs.expandPath(new TreePath(dbNode.getPath()));
-			EventManager.getInstance().fireEvent(DB_INFO_UPDATED, dbInfo);
-
-		}
-
-		private void addTables(int nodeIndex)
-		{
-			DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
-			for (Table table : dbInfo.getTables())
-				tables.add(getTableNode(table));
-			treeModel.insertNodeInto(tables, dbNode, nodeIndex);
-		}
-
-		private DefaultMutableTreeNode getTableNode(Table table)
-		{
-			DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
-			for (Column column : table.getColumns())
-				tableNode.add(new DefaultMutableTreeNode(column));
-			DefaultMutableTreeNode indexes = new LazyLoadIndexNode("Indexes", dataSource, dbInfo.getDbName(), table, treeModel);
-			tableNode.add(indexes);
-			indexes.add(new DefaultMutableTreeNode("Loading..."));
-			return tableNode;
-		}
-
-		private void addStoredProcs(int nodeIndex)
-		{
-			DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
-			for (Procedure procedure : dbInfo.getProcedures())
-			{
-				DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
-				for (Parameter parameter : procedure.getParameters())
-					procedureNode.add(new DefaultMutableTreeNode(parameter));
-				procedures.add(procedureNode);
-			}
-			treeModel.insertNodeInto(procedures, dbNode, nodeIndex);
-		}
-
-		private void addViews(int nodeIndex)
-		{
-			DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
-			for (Table table : dbInfo.getViews())
-				views.add(getTableNode(table));
-			treeModel.insertNodeInto(views, dbNode, nodeIndex);
-		}
-
-		private void addFunctions(int nodeIndex)
-		{
-			DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
-			for (Function function : dbInfo.getFunctions())
-			{
-				DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
-				for (Parameter parameter : function.getParameters())
-					functionsNode.add(new DefaultMutableTreeNode(parameter));
-				functions.add(functionsNode);
-			}
-			treeModel.insertNodeInto(functions, dbNode, nodeIndex);
-		}
-	}
+	}	
 }

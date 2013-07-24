@@ -18,8 +18,7 @@ public class RowNumberColumnMouseListener extends MouseAdapter
 		if(table.convertColumnIndexToModel(col)==0)//They have clicked on the row number button
 		{			
 			table.setRowSelectionInterval(row, row);
-			table.setColumnSelectionInterval(0, table.getColumnCount()-1);
-			System.out.println("hello");
+			table.setColumnSelectionInterval(0, table.getColumnCount()-1);			
 		}
 	}
 
