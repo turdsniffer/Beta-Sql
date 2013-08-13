@@ -15,6 +15,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sql.DataSource;
 import javax.swing.JOptionPane;
 import javax.swing.event.TreeExpansionEvent;
@@ -130,6 +133,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
         btnFind = new javax.swing.JMenuItem();
         dbObjectPopupMenu = new javax.swing.JPopupMenu();
         btnScript = new javax.swing.JMenuItem();
+        btnPrivileges = new javax.swing.JMenuItem();
         jToolBar1 = new javax.swing.JToolBar();
         btnAddDataSource = new javax.swing.JButton();
         pnlConnections = new javax.swing.JPanel();
@@ -179,6 +183,16 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
             }
         });
         dbObjectPopupMenu.add(btnScript);
+
+        btnPrivileges.setText("Privileges");
+        btnPrivileges.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnPrivilegesActionPerformed(evt);
+            }
+        });
+        dbObjectPopupMenu.add(btnPrivileges);
 
         jToolBar1.setRollover(true);
 
@@ -237,8 +251,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		if (node == null)
 			return;
 		DbInfo dbInfo = ((LazyDbInfoNode) node).getDbInfo();
-		treeDbs.expandPath(new TreePath(node.getPath()));
-		//loadLazyData(node, dbInfo, false);
+		treeDbs.expandPath(new TreePath(node.getPath()));		
 		String dataSourceKey = ((DefaultMutableTreeNode) node.getParent()).getUserObject().toString();
 		EventManager.getInstance().fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
 	}//GEN-LAST:event_btnConnectActionPerformed
@@ -264,17 +277,15 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 	private void btnScriptActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnScriptActionPerformed
 	{//GEN-HEADEREND:event_btnScriptActionPerformed
-		DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
-		DbObject userObject = (DbObject) node.getUserObject();
-		while (!(node.getUserObject() instanceof DbInfo))
-			node = (DefaultMutableTreeNode) node.getParent();
-		DbInfo dbInfo = (DbInfo) node.getUserObject();
-		String server = ((DefaultMutableTreeNode) node.getParent()).getUserObject().toString();
-		DataSource dataSource = dataSourceSupplier.getDataSourceByDbId(server);
-
-		DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
 		try
 		{
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+			DataSource dataSource = getDataSourceForNode(node);
+			DbInfo dbInfo = getDbInfoForNode(node);
+			String server = getServerForNode(node);
+			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+			DbObject userObject = (DbObject) node.getUserObject();
+
 			String script = dbInfoDAO.getScript(userObject, dbInfo.getDbName());
 			EventManager.getInstance().fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, server, script));
 		}
@@ -283,6 +294,32 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			JOptionPane.showMessageDialog(this, ex.getMessage());
 		}
 	}//GEN-LAST:event_btnScriptActionPerformed
+
+	private String getServerForNode(DefaultMutableTreeNode node)
+	{
+		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+		return  ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject().toString();
+	}
+
+	private DataSource getDataSourceForNode(DefaultMutableTreeNode node)
+	{
+		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+		String server = ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject().toString();
+		return dataSourceSupplier.getDataSourceByDbId(server);
+	}
+
+	private DbInfo getDbInfoForNode(DefaultMutableTreeNode node)
+	{
+		return getDbInfoNode(node).getDbInfo();
+	}
+
+	private LazyDbInfoNode getDbInfoNode(DefaultMutableTreeNode node)
+	{
+		while (!(node instanceof LazyDbInfoNode))
+			node = (DefaultMutableTreeNode) node.getParent();
+		return (LazyDbInfoNode)node;
+	}
+
 
     private void btnFindActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnFindActionPerformed
     {//GEN-HEADEREND:event_btnFindActionPerformed
@@ -297,10 +334,34 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		findObjectDialog.setLocationRelativeTo(this);
 		findObjectDialog.setVisible(true);
     }//GEN-LAST:event_btnFindActionPerformed
+
+    private void btnPrivilegesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrivilegesActionPerformed
+    {//GEN-HEADEREND:event_btnPrivilegesActionPerformed
+		try
+		{
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+
+			if (!(node.getUserObject() instanceof Table))
+				return;
+			Table table = (Table) node.getUserObject();
+			DataSource dataSource = getDataSourceForNode(node);
+			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+			DbInfo dbInfo = getDbInfoForNode(node);
+			List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges(dbInfo.getDbName(), table);
+			TablePrivileges.getInstance().show(tablePrivileges);
+
+		}
+		catch (SQLException ex)
+		{
+			Logger.getLogger(ConnectionsPanel.class.getName()).log(Level.SEVERE, null, ex);
+		}
+    }//GEN-LAST:event_btnPrivilegesActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddDataSource;
     private javax.swing.JMenuItem btnConnect;
     private javax.swing.JMenuItem btnFind;
+    private javax.swing.JMenuItem btnPrivileges;
     private javax.swing.JMenuItem btnScript;
     private javax.swing.JPopupMenu dbObjectPopupMenu;
     private javax.swing.JPopupMenu dbPopupMenu;
@@ -349,9 +410,15 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 					if (userObject instanceof DbObject)
 					{
 						if (userObject instanceof Table)
-							btnScript.setEnabled(false);
+						{
+							btnScript.setVisible(false);
+							btnPrivileges.setVisible(true);
+						}
 						else
-							btnScript.setEnabled(true);
+						{
+							btnScript.setVisible(true);
+							btnPrivileges.setVisible(false);
+						}
 
 						dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
 					}

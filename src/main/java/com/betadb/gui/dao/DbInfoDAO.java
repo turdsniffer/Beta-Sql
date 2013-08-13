@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -251,8 +252,7 @@ public class DbInfoDAO
 				index.setSchemaName(rs.getString("TABLE_SCHEM"));
 				index.setProperties(ResultSetUtils.getRowAsProperties(rs));
 				indexes.add(index);
-			}
-			getTablePrivileges(dbName, table);
+			}			
 		}
 		catch (SQLException ex)
 		{
@@ -262,9 +262,9 @@ public class DbInfoDAO
 		return indexes;
 	}
 
-	public void getTablePrivileges(String dbName, Table table) throws SQLException
+	public List<Map<String,String>> getTablePrivileges(String dbName, Table table) throws SQLException
 	{
-
+		List<Map<String,String>> tablePrivileges = new ArrayList<Map<String, String>>();
 		Connection conn;
 		try
 		{
@@ -272,14 +272,13 @@ public class DbInfoDAO
 			DatabaseMetaData metaData = conn.getMetaData();
 			ResultSet rs = metaData.getTablePrivileges(dbName, table.getSchemaName(), table.getName());
 			while (rs.next())
-			{
-				System.out.println(ResultSetUtils.getRowAsProperties(rs));
-			}
+				tablePrivileges.add(ResultSetUtils.getRowAsProperties(rs));
 		}
 		catch (SQLException ex)
 		{
 			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
+		return tablePrivileges;
 	}
 
 	private class DbObjectKey
