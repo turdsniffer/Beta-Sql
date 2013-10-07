@@ -3,8 +3,10 @@ package com.betadb.gui.dao;
 import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.dbobjects.ForeignKey;
 import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Parameter;
+import com.betadb.gui.dbobjects.PrimaryKey;
 import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
@@ -261,6 +263,59 @@ public class DbInfoDAO
 
 		return indexes;
 	}
+
+	public List<ForeignKey> getForeignKeys(String dbName, Table table) throws SQLException
+	{
+		List<ForeignKey> foreignKeys = new ArrayList<ForeignKey>();
+		Connection conn;
+		try
+		{
+			conn = ds.getConnection();
+			DatabaseMetaData metaData = conn.getMetaData();
+			ResultSet rs = metaData.getImportedKeys(dbName, table.getSchemaName(), table.getName());
+			while (rs.next())
+			{
+				ForeignKey foreignKey = new ForeignKey();
+				foreignKey.setName(rs.getString("FK_NAME"));
+				foreignKey.setSchemaName(table.getSchemaName());
+				foreignKey.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				foreignKeys.add(foreignKey);
+			}
+		}
+		catch (SQLException ex)
+		{
+			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+		return foreignKeys;
+	}
+
+	public List<PrimaryKey> getPrimaryKeys(String dbName, Table table) throws SQLException
+	{
+		List<PrimaryKey> primaryKeys = new ArrayList<PrimaryKey>();
+		Connection conn;
+		try
+		{
+			conn = ds.getConnection();
+			DatabaseMetaData metaData = conn.getMetaData();
+			ResultSet rs = metaData.getPrimaryKeys(dbName, table.getSchemaName(), table.getName());
+			while (rs.next())
+			{
+				PrimaryKey primaryKey = new PrimaryKey();
+				primaryKey.setName(rs.getString("PK_NAME"));
+				primaryKey.setSchemaName(table.getSchemaName());
+				primaryKey.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				primaryKeys.add(primaryKey);
+			}
+		}
+		catch (SQLException ex)
+		{
+			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+		return primaryKeys;
+	}
+
 
 	public List<Map<String,String>> getTablePrivileges(String dbName, Table table) throws SQLException
 	{

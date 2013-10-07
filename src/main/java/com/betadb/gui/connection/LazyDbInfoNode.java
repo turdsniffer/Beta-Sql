@@ -109,7 +109,11 @@ public class LazyDbInfoNode extends LazyLoadNode
 			for (Column column : table.getColumns())
 				tableNode.add(new DefaultMutableTreeNode(column));
 			DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dataSource, dbInfo.getDbName(), table, treeModel);
+			LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
+			LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
 			tableNode.add(indexes);
+			tableNode.add(foreignKeys);
+			tableNode.add(primaryKeys);
 			return tableNode;
 		}
 

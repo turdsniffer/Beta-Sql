@@ -12,7 +12,9 @@ import java.util.List;
 public class Table extends DbObject
 {
 	private List<Column> columns;
-	private List<Index> indexes;	
+	private List<Index> indexes;
+	private List<ForeignKey> foreignKeys;
+	private List<PrimaryKey> primaryKeys;
 
 	public Table()
 	{
@@ -49,5 +51,25 @@ public class Table extends DbObject
 	public String getAutoCompletion()
 	{
 		return getSchemaName()+"."+getName();
+	}
+
+	public List<ForeignKey> getForeignKeys()
+	{
+		return foreignKeys;
+	}
+
+	public void setForeignKeys(List<ForeignKey> foreignKeys)
+	{
+		this.foreignKeys = foreignKeys;
+	}
+
+	public List<PrimaryKey> getPrimaryKeys()
+	{
+		return primaryKeys;
+	}
+
+	public void setPrimaryKeys(List<PrimaryKey> primaryKeys)
+	{
+		this.primaryKeys = primaryKeys;
 	}
 }
