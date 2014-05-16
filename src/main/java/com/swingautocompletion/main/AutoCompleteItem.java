@@ -1,6 +1,7 @@
 package com.swingautocompletion.main;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,11 @@ public abstract class AutoCompleteItem implements Comparable<AutoCompleteItem>
 	 * text to search for when a user begins to type
 	 */
 	public abstract String getAutoCompleteId();
+
+	public List<String> alternateAutoCompeteIds()
+	{
+		return Collections.EMPTY_LIST;
+	}
 	
 	public String getDescription()
 	{

@@ -1,6 +1,9 @@
 package com.swingautocompletion.main;
 
+import com.google.common.collect.Lists;
 import com.swingautocompletion.util.TextEditorUtils;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -15,12 +18,18 @@ import javax.swing.text.JTextComponent;
  */
 public class SubSuggestionsWordSearchProvider
 {
-	public String[] getWordsToSearchForSubSuggestions(JTextComponent textComponent)
+	public List<AutoCompleteItem> getItemsToSearchForSubSuggestions(JTextComponent textComponent)
 	{
 		String block = TextEditorUtils.getCurrentTextBlock(textComponent).toLowerCase();
+		ArrayList<AutoCompleteItem> items = Lists.newArrayList();
 
 		if(block == null)
-			return new String[0];
-		return block.split("\\s|\\.");		
+			return items;
+		String[] words = block.split("\\s|\\.");
+
+		for (String currentWord : words)
+			items.add(new SimpleAutoCompleteItem(currentWord));
+
+		return items;
 	}
 }

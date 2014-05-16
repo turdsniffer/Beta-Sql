@@ -3,8 +3,6 @@ package com.swingautocompletion.util;
 import com.google.common.collect.Lists;
 import java.awt.Color;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.text.BadLocationException;
@@ -12,7 +10,6 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
-import javax.swing.text.Utilities;
 
 /**
  * @author parmstrong

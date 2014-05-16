@@ -13,9 +13,10 @@ import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -37,25 +38,30 @@ public class AutoCompletePopup extends JWindow
 	private JList list;
 	private PopupListModel model;
 	private List<AutoCompleteItem> items;
+	private Map<String,AutoCompleteItem> autoCompleteIdToItemMap;
 	private Set<AutoCompleteItem> subSuggestions;
 	private JTextComponent textComponent;	
 	private List<AutoCompleteHandler> autoCompleteHandlers;
-	private SearchStrategy searchStrategy;
+	private SearchStrategy searchStrategy;	
 	private SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider;
+	private SearchTermProvider searchTermProvider;
 	private PropertiesWindow propertiesWindow;
 	private final Dimension dimension = new Dimension(300, 200);
 
 	public AutoCompletePopup(JTextComponent textComponent)
 	{
-		this(textComponent, new PopupListCellRenderer(), new SubSuggestionsWordSearchProvider());
+		this(textComponent, new PopupListCellRenderer(), new SubSuggestionsWordSearchProvider(), new DefaultSearchTermProvider());
 	}
 
-	public AutoCompletePopup(JTextComponent textComponent, PopupListCellRenderer popupListCellRenderer, SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider)
+	public AutoCompletePopup(JTextComponent textComponent, PopupListCellRenderer popupListCellRenderer, SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider, SearchTermProvider searchTermProvider)
 	{		
 		this.propertiesWindow = new PropertiesWindow(this);
 		this.subSuggestionsWordSearchProvider = subSuggestionsWordSearchProvider;
-		subSuggestions = new TreeSet<AutoCompleteItem>();
-		searchStrategy = new BinarySearch();
+		this.autoCompleteIdToItemMap = new HashMap<String, AutoCompleteItem>();
+		this.subSuggestions = new TreeSet<AutoCompleteItem>();
+		this.searchStrategy = new LinearSearch();
+		this.searchTermProvider = searchTermProvider;
+
 		autoCompleteHandlers = new ArrayList<AutoCompleteHandler>();
 		this.textComponent = textComponent;
 		addListenersToTextComponent();
@@ -104,7 +110,7 @@ public class AutoCompletePopup extends JWindow
 					if(e.isShiftDown() && e.isControlDown())
 						searchStrategy = new LinearContainsSearch();
 					else
-						searchStrategy = new BinarySearch();
+						searchStrategy = new LinearSearch();
 				
 					
 					addSubSuggestions();
@@ -168,28 +174,25 @@ public class AutoCompletePopup extends JWindow
 	private void addSubSuggestions()
 	{
 		subSuggestions.clear();
-		String[] words = subSuggestionsWordSearchProvider.getWordsToSearchForSubSuggestions(textComponent);
-		Arrays.sort(words);
+		List<AutoCompleteItem> itemsToMatch = subSuggestionsWordSearchProvider.getItemsToSearchForSubSuggestions(textComponent);	
 		
-		int j = 0;
-		for (int i = 0; i < words.length && j < items.size(); i++)
+		for (AutoCompleteItem autoCompleteItem : itemsToMatch)
 		{
-			String curWord = words[i].toLowerCase();
-			AutoCompleteItem item = items.get(j);
-			while (item.getAutoCompleteId().toLowerCase().compareTo(curWord) <= 0 && j < items.size()-1)
-			{				
-				int compare = item.getAutoCompleteId().toLowerCase().compareTo(curWord);
-				if (compare == 0)
-					subSuggestions.addAll(items.get(j).getSubSuggestions());
-				j++;
-				item = items.get(j);
-			}			
+			AutoCompleteItem match = autoCompleteIdToItemMap.get(autoCompleteItem.getAutoCompleteId().toLowerCase());
+			if(match != null)
+				subSuggestions.addAll(match.getSubSuggestions());
 		}
 	}
 
 	public void setAutoCompletePossibilties(List<? extends AutoCompleteItem> items)
 	{
-		this.items = new ArrayList<AutoCompleteItem>(items);		
+		this.items = new ArrayList<AutoCompleteItem>(items);
+		for (AutoCompleteItem autoCompleteItem : items)
+		{
+			autoCompleteIdToItemMap.put(autoCompleteItem.getAutoCompleteId().toLowerCase(), autoCompleteItem);
+			for (String alternateId : autoCompleteItem.alternateAutoCompeteIds())
+				autoCompleteIdToItemMap.put(alternateId.toLowerCase(), autoCompleteItem);
+		}
 		this.sortSuggestions();
 	}
 
@@ -217,10 +220,8 @@ public class AutoCompletePopup extends JWindow
 	public void updateAutoComplete()
 	{
 		updatePosition();
-		Pair<Integer, Integer> currentWordBounds = TextEditorUtils.getWordBounds(textComponent, TextEditorUtils.ExpansionDirection.LEFT);
-		String wordPart = TextEditorUtils.getCurrentWord(currentWordBounds, textComponent);
+		String wordPart = searchTermProvider.getSearchTerm(textComponent);
 		model.removeAllElements();
-
 		List<AutoCompleteItem> foundMatches = searchStrategy.search(wordPart, new ArrayList<AutoCompleteItem>(subSuggestions));
 		foundMatches.addAll(searchStrategy.search(wordPart, items));
 		
@@ -267,10 +268,7 @@ public class AutoCompletePopup extends JWindow
 		int newIndex = Math.min(model.getSize() - 1, current + 1);
 		list.setSelectionInterval(newIndex, newIndex);
 		list.scrollRectToVisible(list.getCellBounds(newIndex, newIndex));
-	}
-
-
-	
+	}	
 	public void addAutoCompleteHandler(AutoCompleteHandler handler)
 	{
 		autoCompleteHandlers.add(handler);
