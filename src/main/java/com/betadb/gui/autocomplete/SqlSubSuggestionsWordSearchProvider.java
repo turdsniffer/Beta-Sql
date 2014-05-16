@@ -1,9 +1,13 @@
 package com.betadb.gui.autocomplete;
 
-
 import com.swingautocompletion.util.TextEditorUtils;
 import com.google.common.collect.Lists;
+import com.swingautocompletion.main.AutoCompleteItem;
+import com.swingautocompletion.main.SearchTermProvider;
+import com.swingautocompletion.main.SimpleAutoCompleteItem;
 import com.swingautocompletion.main.SubSuggestionsWordSearchProvider;
+import com.swingautocompletion.util.Pair;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,50 +16,92 @@ import javax.swing.text.JTextComponent;
 /**
  * @author parmstrong
  */
-public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearchProvider
+public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearchProvider implements SearchTermProvider
 {
 	private static final List WORD_SEPARATORS = Lists.newArrayList(' ', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
-	
-	
-	/**
-	 * This method determines the items we grab sub suggestions from.  normally this will just grab all the 
-	 * subsuggestions for any auto complete item in the block and then begin filtering them as you type.  
-	 * However for our editor if we type <tablealias>. and then hit ctrl space it should only find subsuggestions for the
-	 * table we have aliased.  In this way we don't get suggestions for every table in the sql block but only the table we
-	 * are completing for.
-	 * @param textComponent
-	 * @return 
-	 */
-	
+	private static final List ALIAS_SEPARATORS = Lists.newArrayList(' ', '.', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
+
+
+
 	@Override
-	public String[] getWordsToSearchForSubSuggestions(JTextComponent textComponent)
+	public String getSearchTerm(JTextComponent textComponent)
+	{
+		Pair<Integer, Integer> currentWordBounds;
+		if(isCurrentTermAnAlias(textComponent))
+			currentWordBounds = TextEditorUtils.getWordBounds(textComponent, ALIAS_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+		else
+			currentWordBounds = TextEditorUtils.getWordBounds(textComponent, WORD_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+		return TextEditorUtils.getCurrentWord(currentWordBounds, textComponent);
+	}
+
+
+	/**
+	 * This method determines the items we grab sub suggestions from. normally this will just grab all the subsuggestions for any auto complete item in the block and then begin filtering them as you
+	 * type. However for our editor if we type <tablealias>. and then hit ctrl space it should only find subsuggestions for the table we have aliased. In this way we don't get suggestions for every
+	 * table in the sql block but only the table we are completing for.
+	 *
+	 * @param textComponent
+	 * @return
+	 */
+	@Override
+	public List<AutoCompleteItem> getItemsToSearchForSubSuggestions(JTextComponent textComponent)
 	{
 		String currentWord = TextEditorUtils.getCurrentWord(textComponent, WORD_SEPARATORS);
 		if (currentWord.endsWith(".") && currentWord.length() > 1)
-		{			
-			currentWord = currentWord.substring(0, currentWord.length()-1);
-			Pattern p = Pattern.compile("\\b"+currentWord+"\\b");
-			
-			String currentTextBlock = TextEditorUtils.getCurrentTextBlock(textComponent);
-			Matcher matcher = p.matcher(currentTextBlock);
-			if(matcher.find())
-			{	
-				int firstOccurance = matcher.start();
+			return getItemsForAlias(textComponent, currentWord);
+		return getItemsDefault(textComponent);
+	}
 
-				currentTextBlock = currentTextBlock.substring(0,firstOccurance);
-				String[] split = currentTextBlock.split("\\s|\\.");
-				if(split.length > 0)
-				{
+	private List<AutoCompleteItem> getItemsForAlias(JTextComponent textComponent, String currentWord)
+	{
+		currentWord = currentWord.substring(0, currentWord.length() - 1);
+		Pattern p = Pattern.compile("\\b" + currentWord + "\\b");
+		ArrayList<AutoCompleteItem> alias = Lists.newArrayList();
 
-					String [] word = new String[1];
-					if(split[split.length-1].equalsIgnoreCase("as"))
-						word[0] = split[split.length-2];
-					else
-						word[0] = split[split.length-1];
-					return word;				
-				}	
+		String currentTextBlock = TextEditorUtils.getCurrentTextBlock(textComponent);
+		Matcher matcher = p.matcher(currentTextBlock);
+		if (matcher.find())
+		{
+			int firstOccurance = matcher.start();
+
+			currentTextBlock = currentTextBlock.substring(0, firstOccurance);
+			String[] split = currentTextBlock.split("\\s|\\.");
+			if (split.length > 0)
+			{
+				if (split[split.length - 1].equalsIgnoreCase("as"))
+					alias.add(new SimpleAutoCompleteItem(split[split.length - 2]));
+				else
+					alias.add(new SimpleAutoCompleteItem(split[split.length - 1]));
 			}
 		}
-		return super.getWordsToSearchForSubSuggestions(textComponent);
+		return alias;
+	}
+
+	private boolean isCurrentTermAnAlias(JTextComponent textComponent)
+	{
+		String currentWord = TextEditorUtils.getCurrentWord(textComponent, WORD_SEPARATORS);
+		if(!currentWord.contains("."))
+			return false;
+		String alias = currentWord.substring(0, currentWord.indexOf("."));
+		Pattern p = Pattern.compile("\\s" + alias + "\\s");
+
+		String currentTextBlock = TextEditorUtils.getCurrentTextBlock(textComponent);
+		Matcher matcher = p.matcher(currentTextBlock);
+		return matcher.find();
+	}
+
+	private List<AutoCompleteItem> getItemsDefault(JTextComponent textComponent)
+	{
+		String block = TextEditorUtils.getCurrentTextBlock(textComponent).toLowerCase();
+		ArrayList<AutoCompleteItem> items = Lists.newArrayList();
+
+		if (block == null)
+			return items;
+		String[] words = block.split("\\s");
+
+		for (String currentWord : words)
+			items.add(new SimpleAutoCompleteItem(currentWord));
+
+		return items;
 	}
 }

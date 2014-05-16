@@ -32,4 +32,10 @@ public class Column extends DbObject
 	{
 		this.decimalDigits = decimalDigits;
 	}
+
+	@Override
+	public String getAutoCompleteId()
+	{
+		return getName();
+	}
 }

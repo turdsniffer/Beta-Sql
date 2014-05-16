@@ -11,6 +11,7 @@ import com.betadb.gui.events.EventManager;
 import com.swingautocompletion.main.AutoCompleteHandler;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
+import com.swingautocompletion.main.DefaultSearchTermProvider;
 import com.swingautocompletion.main.SubSuggestionsWordSearchProvider;
 
 
@@ -32,7 +33,7 @@ public class FindObjectDialog extends javax.swing.JDialog
 		this.setTitle("Find Object");
 		this.dbInfo = dbInfo;
 		connectionsPanel = ConnectionsPanel.getInstance();
-		autoCompletePopup = new AutoCompletePopup(txtSearch, new BetaDbPopupListCellRenderer(), new SubSuggestionsWordSearchProvider());
+		autoCompletePopup = new AutoCompletePopup(txtSearch, new BetaDbPopupListCellRenderer(), new SubSuggestionsWordSearchProvider(), new DefaultSearchTermProvider());
 		autoCompletePopup.setAutoCompletePossibilties(dbInfo.getAllDbObjects());
 		autoCompletePopup.addAutoCompleteHandler(new AutoCompleteHandler() {
 

@@ -2,6 +2,8 @@ package com.betadb.gui.dbobjects;
 
 
 import com.swingautocompletion.main.AutoCompleteItem;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -44,7 +46,15 @@ public class DbObject extends AutoCompleteItem
 	@Override
 	public String getAutoCompleteId()
 	{
-		return getName();
+		return getSchemaName()+"."+getName();
+	}
+
+	@Override
+	public List<String> alternateAutoCompeteIds()
+	{
+		if(schemaName.equals("dbo"))
+			return Collections.singletonList(getName());
+		return Collections.EMPTY_LIST;
 	}
 
 	public String getSchemaName()
@@ -75,11 +85,5 @@ public class DbObject extends AutoCompleteItem
 	public Object getProperty(String name)
 	{
 		return properties.get(name);
-	}
-
-	@Override
-	public String getDescription()
-	{
-		return getSchemaName();
 	}
 }

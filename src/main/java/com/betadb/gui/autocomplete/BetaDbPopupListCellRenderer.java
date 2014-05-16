@@ -35,7 +35,8 @@ public class BetaDbPopupListCellRenderer extends PopupListCellRenderer
 
 
 		//this.setText("<html>"+item.getAutoCompleteId() +" <FONT size=-2 COLOR=\"#00FFFF\">"+ item.getDescription()+"</FONT></html>");
-		this.setText(item.getAutoCompleteId() +" ("+ item.getDescription()+")");
+		String description = item.getDescription() == null || item.getDescription().isEmpty() ? "" : " ("+ item.getDescription()+")";
+		this.setText(item.getAutoCompleteId() + description);
 		setIcon(Icon.getIcon(value.getClass()));
 			
         return this;
