@@ -2,6 +2,7 @@
 package com.betadb.gui.table.util.renderer;
 
 import java.awt.Component;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import javax.swing.JButton;
 
 
@@ -14,7 +15,7 @@ public class RowNumberRenderer implements CellClassRenderer<Integer>
 
 	public RowNumberRenderer()
 	{
-		button.setBorder(javax.swing.BorderFactory.createEmptyBorder());		
+		button.setBorder(createEmptyBorder());		
 	}
 
 	@Override

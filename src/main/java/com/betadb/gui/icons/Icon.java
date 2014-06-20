@@ -8,6 +8,7 @@ import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.PrimaryKey;
 import com.betadb.gui.dbobjects.Procedure;
+import com.betadb.gui.dbobjects.Server;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
 import javax.swing.ImageIcon;
@@ -20,6 +21,7 @@ import javax.swing.ImageIcon;
 public enum Icon
 {	
 	COLUMN("column.png", Column.class),
+	SERVER("server.png", Server.class),
 	TABLE("table.png", Table.class),
 	FUNCTION("function.png", Function.class),
 	VIEW("view.png", View.class),

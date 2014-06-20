@@ -12,11 +12,14 @@ import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
 import com.betadb.gui.exception.BetaDbException;
 import com.betadb.gui.jdbc.util.ResultSetUtils;
+import static com.betadb.gui.jdbc.util.ResultSetUtils.getRowAsProperties;
 import com.betadb.gui.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
+import static com.google.common.collect.ArrayListMultimap.create;
 import com.google.common.collect.ListMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -25,13 +28,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.StringUtils;
+import static org.apache.commons.lang3.StringUtils.join;
 
 /**
  * @author parmstrong
@@ -45,21 +51,22 @@ public class DbInfoDAO
 	public DbInfoDAO(DataSource ds)
 	{
 		this.ds = ds;
-		this.threadPool = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10));
+		this.threadPool = listeningDecorator(newFixedThreadPool(10));
 	}
 
 	public List<DbInfo> getDatabases() throws SQLException
 	{
-		Connection conn = ds.getConnection();
-		ResultSet rs = conn.getMetaData().getCatalogs();
-		List<DbInfo> retVal = new ArrayList<DbInfo>();
-		while (rs.next())
+		List<DbInfo> retVal;
+		try (Connection conn = ds.getConnection())
 		{
-			DbInfo dbInfo = new DbInfo(rs.getString(1));
-			retVal.add(dbInfo);
+			ResultSet rs = conn.getMetaData().getCatalogs();
+			retVal = new ArrayList<>();
+			while (rs.next())
+			{
+				DbInfo dbInfo = new DbInfo(rs.getString(1));
+				retVal.add(dbInfo);
+			}	rs.close();
 		}
-		rs.close();
-		conn.close();
 
 		return retVal;
 	}
@@ -104,7 +111,7 @@ public class DbInfoDAO
 			}
 			catch (SQLException ex)
 			{
-				Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+				getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
 	}
@@ -133,15 +140,15 @@ public class DbInfoDAO
 			}
 			catch (SQLException ex)
 			{
-				Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+				getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
 	}
 
 	private Pair<List<Table>, List<View>> getTablesAndViews(DatabaseMetaData databaseMetaData, String dbName, ListMultimap<DbObjectKey, Column> columns) throws SQLException
 	{
-		List<Table> tables = new ArrayList<Table>();
-		List<View> views = new ArrayList<View>();
+		List<Table> tables = new ArrayList<>();
+		List<View> views = new ArrayList<>();
 
 		ResultSet rs = databaseMetaData.getTables(dbName, null, null, null);
 
@@ -158,16 +165,16 @@ public class DbInfoDAO
 				tables.add(table);
 			table.setSchemaName(rs.getString("TABLE_SCHEM"));
 			table.setName(rs.getString("TABLE_NAME"));
-			table.setProperties(ResultSetUtils.getRowAsProperties(rs));
+			table.setProperties(getRowAsProperties(rs));
 			table.setColumns(columns.get(new DbObjectKey(dbName, table.getSchemaName(), table.getName())));
 		}
 
-		return new Pair<List<Table>, List<View>>(tables, views);
+		return new Pair<>(tables, views);
 	}
 
 	private ListMultimap<DbObjectKey, Column> getColumns(DatabaseMetaData databaseMetaData, String catalog) throws SQLException
 	{
-		ListMultimap<DbObjectKey, Column> retVal = ArrayListMultimap.create();
+		ListMultimap<DbObjectKey, Column> retVal = create();
 
 		ResultSet rs = databaseMetaData.getColumns(catalog, null, null, null);
 		while (rs.next())
@@ -177,7 +184,7 @@ public class DbInfoDAO
 			c.setSchemaName(rs.getString("TABLE_SCHEM"));
 			c.setDecimalDigits(rs.getInt("COLUMN_SIZE"));
 			c.setDataType(rs.getString("TYPE_NAME"));
-			c.setProperties(ResultSetUtils.getRowAsProperties(rs));
+			c.setProperties(getRowAsProperties(rs));
 			retVal.put(new DbObjectKey(catalog, rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME")), c);
 		}
 		return retVal;
@@ -185,7 +192,7 @@ public class DbInfoDAO
 
 	private List<Procedure> getProcedures(DatabaseMetaData databaseMetaData, String dbName, ListMultimap<DbObjectKey, Parameter> parameterMap) throws SQLException
 	{
-		List<Procedure> results = new ArrayList<Procedure>();
+		List<Procedure> results = new ArrayList<>();
 
 		ResultSet rs = databaseMetaData.getProcedures(dbName, null, null);
 		while (rs.next())
@@ -194,7 +201,7 @@ public class DbInfoDAO
 			String name = rs.getString("PROCEDURE_NAME");
 			procedure.setName(cleanUpName(name));
 			procedure.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
-			procedure.setProperties(ResultSetUtils.getRowAsProperties(rs));
+			procedure.setProperties(getRowAsProperties(rs));
 			procedure.setParameters(parameterMap.get(new DbObjectKey(dbName, procedure.getSchemaName(), procedure.getName())));
 			results.add(procedure);
 		}
@@ -215,7 +222,7 @@ public class DbInfoDAO
 	private ListMultimap<DbObjectKey, Parameter> getProcedureParameters(DatabaseMetaData metaData, String dbName) throws SQLException
 	{
 		ResultSet rs = metaData.getProcedureColumns(dbName, null, null, null);
-		ListMultimap<DbObjectKey, Parameter> parameterMap = ArrayListMultimap.create();
+		ListMultimap<DbObjectKey, Parameter> parameterMap = create();
 
 		while (rs.next())
 		{
@@ -224,7 +231,7 @@ public class DbInfoDAO
 			Parameter parameter = new Parameter();
 			parameter.setName(rs.getString("COLUMN_NAME"));
 			parameter.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
-			parameter.setProperties(ResultSetUtils.getRowAsProperties(rs));
+			parameter.setProperties(getRowAsProperties(rs));
 			parameterMap.put(new DbObjectKey(dbName, parameter.getSchemaName(), rs.getString("PROCEDURE_NAME")), parameter);
 		}
 		return parameterMap;
@@ -235,12 +242,12 @@ public class DbInfoDAO
 		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." + dbObject.getName() + "'";
 		QueryRunner runner = new QueryRunner(ds);
 		List<String> results = (List) runner.query(sql, new ColumnListHandler());
-		return StringUtils.join(results, "");
+		return join(results, "");
 	}
 
 	public List<Index> getIndexes(String dbName, Table table) throws SQLException
 	{
-		List<Index> indexes = new ArrayList<Index>();
+		List<Index> indexes = new ArrayList<>();
 		Connection conn;
 		try
 		{
@@ -252,13 +259,13 @@ public class DbInfoDAO
 				Index index = new Index();
 				index.setName(rs.getString("Index_Name"));
 				index.setSchemaName(rs.getString("TABLE_SCHEM"));
-				index.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				index.setProperties(getRowAsProperties(rs));
 				indexes.add(index);
 			}			
 		}
 		catch (SQLException ex)
 		{
-			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
 		return indexes;
@@ -266,7 +273,7 @@ public class DbInfoDAO
 
 	public List<ForeignKey> getForeignKeys(String dbName, Table table) throws SQLException
 	{
-		List<ForeignKey> foreignKeys = new ArrayList<ForeignKey>();
+		List<ForeignKey> foreignKeys = new ArrayList<>();
 		Connection conn;
 		try
 		{
@@ -278,13 +285,13 @@ public class DbInfoDAO
 				ForeignKey foreignKey = new ForeignKey();
 				foreignKey.setName(rs.getString("FK_NAME"));
 				foreignKey.setSchemaName(table.getSchemaName());
-				foreignKey.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				foreignKey.setProperties(getRowAsProperties(rs));
 				foreignKeys.add(foreignKey);
 			}
 		}
 		catch (SQLException ex)
 		{
-			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
 		return foreignKeys;
@@ -292,7 +299,7 @@ public class DbInfoDAO
 
 	public List<PrimaryKey> getPrimaryKeys(String dbName, Table table) throws SQLException
 	{
-		List<PrimaryKey> primaryKeys = new ArrayList<PrimaryKey>();
+		List<PrimaryKey> primaryKeys = new ArrayList<>();
 		Connection conn;
 		try
 		{
@@ -304,13 +311,13 @@ public class DbInfoDAO
 				PrimaryKey primaryKey = new PrimaryKey();
 				primaryKey.setName(rs.getString("PK_NAME"));
 				primaryKey.setSchemaName(table.getSchemaName());
-				primaryKey.setProperties(ResultSetUtils.getRowAsProperties(rs));
+				primaryKey.setProperties(getRowAsProperties(rs));
 				primaryKeys.add(primaryKey);
 			}
 		}
 		catch (SQLException ex)
 		{
-			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
 		return primaryKeys;
@@ -319,7 +326,7 @@ public class DbInfoDAO
 
 	public List<Map<String,String>> getTablePrivileges(String dbName, Table table) throws SQLException
 	{
-		List<Map<String,String>> tablePrivileges = new ArrayList<Map<String, String>>();
+		List<Map<String,String>> tablePrivileges = new ArrayList<>();
 		Connection conn;
 		try
 		{
@@ -327,11 +334,11 @@ public class DbInfoDAO
 			DatabaseMetaData metaData = conn.getMetaData();
 			ResultSet rs = metaData.getTablePrivileges(dbName, table.getSchemaName(), table.getName());
 			while (rs.next())
-				tablePrivileges.add(ResultSetUtils.getRowAsProperties(rs));
+				tablePrivileges.add(getRowAsProperties(rs));
 		}
 		catch (SQLException ex)
 		{
-			Logger.getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(DbInfoDAO.class.getName()).log(Level.SEVERE, null, ex);
 		}
 		return tablePrivileges;
 	}

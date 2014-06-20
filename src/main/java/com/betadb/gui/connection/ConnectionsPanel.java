@@ -17,9 +17,10 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import javax.swing.JOptionPane;
+import static javax.swing.JOptionPane.showMessageDialog;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -74,14 +75,14 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		}
 		catch (SQLException ex)
 		{
-			JOptionPane.showMessageDialog(this, "Error getting databases." + ex.getMessage(), "Connect Error", JOptionPane.ERROR_MESSAGE);
+			showMessageDialog(this, "Error getting databases." + ex.getMessage(), "Connect Error", JOptionPane.ERROR_MESSAGE);
 		}
 
 	}
 
 	private void addDataBases(DataSource dataSource, DefaultMutableTreeNode top) throws SQLException
 	{
-		List<DbInfo> infos = new ArrayList<DbInfo>();
+		List<DbInfo> infos = new ArrayList<>();
 
 		DbInfoDAO dao = new DbInfoDAO(dataSource);
 		infos = dao.getDatabases();
@@ -93,9 +94,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	public void EventOccurred(Event event, Object value)
 	{
 		if (event == DATA_SOURCE_ADDED)
-		{
-			String dataSourceKey = (String) value;
-			addDataSource(dataSourceKey);
+		{		
+			addDataSource((String) value);
 		}
 		if (event == DB_OBJECT_SELECTED)
 		{
@@ -291,7 +291,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		}
 		catch (SQLException ex)
 		{
-			JOptionPane.showMessageDialog(this, ex.getMessage());
+			showMessageDialog(this, ex.getMessage());
 		}
 	}//GEN-LAST:event_btnScriptActionPerformed
 
@@ -353,7 +353,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		}
 		catch (SQLException ex)
 		{
-			Logger.getLogger(ConnectionsPanel.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(ConnectionsPanel.class.getName()).log(Level.SEVERE, null, ex);
 		}
     }//GEN-LAST:event_btnPrivilegesActionPerformed
 

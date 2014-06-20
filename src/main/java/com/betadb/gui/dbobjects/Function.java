@@ -12,7 +12,7 @@ public class Function extends DbObject
 
 	public Function()
 	{
-		this.parameters = new ArrayList<Parameter>();
+		this.parameters = new ArrayList<>();
 	}	
 	
 	public void setParameters(List<Parameter> parameters)

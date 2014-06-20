@@ -2,6 +2,7 @@ package com.betadb.gui.sql;
 
 import com.betadb.gui.table.util.renderer.ColumnClassTableCellRenderer;
 import java.awt.Component;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import javax.swing.JButton;
 import javax.swing.JTable;
 
@@ -14,7 +15,7 @@ public class ResultsPanelTableCellRenderer extends ColumnClassTableCellRenderer
 
 	public ResultsPanelTableCellRenderer()
 	{
-		button.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+		button.setBorder(createEmptyBorder());
 	}
 
 	@Override

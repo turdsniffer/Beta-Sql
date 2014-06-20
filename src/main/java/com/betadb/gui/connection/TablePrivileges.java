@@ -7,6 +7,7 @@ package com.betadb.gui.connection;
 import com.betadb.gui.MainWindow;
 import com.betadb.gui.table.util.renderer.ColumnClassTableCellRenderer;
 import com.betadb.gui.table.util.renderer.RendererUtils;
+import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
 import java.util.List;
 import java.util.Map;
 import javax.swing.table.DefaultTableModel;
@@ -56,7 +57,7 @@ public class TablePrivileges extends javax.swing.JDialog
 		}
 		
 		model.setDataVector(convertedData, columnNames);
-		RendererUtils.formatColumns(jTable1, new ColumnClassTableCellRenderer());
+		formatColumns(jTable1, new ColumnClassTableCellRenderer());
 		this.setVisible(true);
 	}
 

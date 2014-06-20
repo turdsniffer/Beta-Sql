@@ -12,7 +12,7 @@ public class Procedure extends DbObject
 
 	public Procedure()
 	{
-		this.parameters = new ArrayList<Parameter>();
+		this.parameters = new ArrayList<>();
 	}	
 	
 	public void setParameters(List<Parameter> parameters)

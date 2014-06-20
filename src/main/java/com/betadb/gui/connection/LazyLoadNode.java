@@ -16,9 +16,9 @@ public abstract class LazyLoadNode extends DefaultMutableTreeNode
 	private boolean loaded;
 	
 
-	public LazyLoadNode(String displayText, DataSource datasource, DefaultTreeModel treeModel)
+	public LazyLoadNode(Object userObject, DataSource datasource, DefaultTreeModel treeModel)
 	{
-		super(displayText);
+		super(userObject);
 		this.loadingNode = new DefaultMutableTreeNode("Loading...");
 		this.add(loadingNode);
 		this.dataSource = datasource;

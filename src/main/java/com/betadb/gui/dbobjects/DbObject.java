@@ -3,6 +3,7 @@ package com.betadb.gui.dbobjects;
 
 import com.swingautocompletion.main.AutoCompleteItem;
 import java.util.Collections;
+import static java.util.Collections.singletonList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,7 +16,7 @@ public class DbObject extends AutoCompleteItem
 	private String name;
 	private int objectId;
 	private String schemaName;
-	private Map<String,String> properties = new TreeMap<String, String>();
+	private Map<String,String> properties = new TreeMap<>();
 
 	public String getName()
 	{
@@ -53,7 +54,7 @@ public class DbObject extends AutoCompleteItem
 	public List<String> alternateAutoCompeteIds()
 	{
 		if(schemaName.equals("dbo"))
-			return Collections.singletonList(getName());
+			return singletonList(getName());
 		return Collections.EMPTY_LIST;
 	}
 

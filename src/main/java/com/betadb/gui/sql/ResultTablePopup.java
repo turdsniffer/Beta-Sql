@@ -1,7 +1,9 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.cellviewer.CellViewer;
+import static com.betadb.gui.cellviewer.CellViewer.getInstance;
 import java.awt.Toolkit;
+import static java.awt.Toolkit.getDefaultToolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -46,7 +48,7 @@ public class ResultTablePopup extends JPopupMenu
 				}
 
 				StringSelection ss = new StringSelection(selectedText.toString());
-				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
+				getDefaultToolkit().getSystemClipboard().setContents(ss, null);
 			}
 		});
 		this.add(btnCopyIn);
@@ -80,7 +82,7 @@ public class ResultTablePopup extends JPopupMenu
 				}
 
 				StringSelection ss = new StringSelection(selectedText.toString());
-				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
+				getDefaultToolkit().getSystemClipboard().setContents(ss, null);
 			}
 		});
 		this.add(btnInsert);
@@ -109,7 +111,7 @@ public class ResultTablePopup extends JPopupMenu
 				int selectedRow = table.getSelectedRow();
 				Class columnClass = table.getColumnClass(selectedColumn);
 				Object cellValue = table.getValueAt(selectedRow, selectedColumn);
-				CellViewer.getInstance().setValue(columnClass, cellValue);
+				getInstance().setValue(columnClass, cellValue);
 			}
 		});
 		this.add(btnViewer);

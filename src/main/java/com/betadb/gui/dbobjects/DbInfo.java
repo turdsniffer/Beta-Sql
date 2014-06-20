@@ -22,15 +22,15 @@ public class DbInfo
 		this.dbName = dbName;
 		this.defaultSchema = "dbo";
 		lazyDataLoaded = false;
-		tables = new ArrayList<Table>();
-		procedures = new ArrayList<Procedure>();
-		views = new ArrayList<View>();
-		functions = new ArrayList<Function>();
+		tables = new ArrayList<>();
+		procedures = new ArrayList<>();
+		views = new ArrayList<>();
+		functions = new ArrayList<>();
 	}	
 
 	public List<DbObject> getAllDbObjects()
 	{
-		List<DbObject> retVal = new ArrayList<DbObject>();
+		List<DbObject> retVal = new ArrayList<>();
 		retVal.addAll(getTables());
 		retVal.addAll(getViews());
 		retVal.addAll(getFunctions());

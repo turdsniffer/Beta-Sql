@@ -21,16 +21,15 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
-import com.betadb.gui.dbobjects.DbObject;
-import com.swingautocompletion.main.SimpleAutoCompleteItem;
 import com.swingautocompletion.util.TextEditorUtils;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
-import jsyntaxpane.DefaultSyntaxKit;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+
 
 /**
  *
@@ -39,7 +38,7 @@ import jsyntaxpane.DefaultSyntaxKit;
 public class EditorPanel extends javax.swing.JPanel implements EventListener
 {
 
-	final JEditorPane codeEditor;
+	final RSyntaxTextArea codeEditor;
 	final AutoCompletePopup autoCompletePopup;
 	final DbInfo dbInfo;
 
@@ -51,22 +50,22 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener
 		EventManager.getInstance().addEventListener(this);
 		dbInfo = connectionInfo.getDbInfo();
 		initComponents();
-		DefaultSyntaxKit.initKit();
-		codeEditor = new JEditorPane();
+		codeEditor = new RSyntaxTextArea();
 		SqlSubSuggestionsWordSearchProvider sqlSubSuggestionsWordSearchProvider = new SqlSubSuggestionsWordSearchProvider();
 		autoCompletePopup = new AutoCompletePopup(codeEditor, new BetaDbPopupListCellRenderer(), sqlSubSuggestionsWordSearchProvider, sqlSubSuggestionsWordSearchProvider);
 		refreshAutoCompleteOptions();
 		JScrollPane scrPane = new JScrollPane(codeEditor);
 		this.add(scrPane);
 		this.doLayout();
-		codeEditor.setContentType("text/sql");
+
+		codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
 		codeEditor.setText(connectionInfo.getStartingSql());
 		codeEditor.addCaretListener(new WordHighlighter());//Highlight occurances of current word.
 	}
 
 	private void refreshAutoCompleteOptions()
 	{
-		List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<AutoCompleteItem>();
+		List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<>();
 		autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
 		autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
 		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);

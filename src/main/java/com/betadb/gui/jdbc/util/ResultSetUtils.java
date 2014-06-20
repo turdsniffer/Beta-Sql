@@ -2,6 +2,9 @@
 package com.betadb.gui.jdbc.util;
 
 import com.google.common.collect.Maps;
+import static com.google.common.collect.Maps.newHashMap;
+import static java.lang.Class.forName;
+import static java.lang.String.valueOf;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -19,7 +22,7 @@ public class ResultSetUtils
 		ResultSetMetaData metaData = rs.getMetaData();
 
 		int numColumns = metaData.getColumnCount();
-		List<String> columns = new ArrayList<String>(numColumns);
+		List<String> columns = new ArrayList<>(numColumns);
 
 		for (int i = 1; i < numColumns + 1; i++)
 			columns.add(i - 1, metaData.getColumnName(i));
@@ -33,12 +36,12 @@ public class ResultSetUtils
 
 		int numColumns = metaData.getColumnCount();
 
-		List<Class> classes = new ArrayList<Class>();
+		List<Class> classes = new ArrayList<>();
 		for (int i = 1; i < numColumns + 1; i++)
 		{
 			try
 			{
-				classes.add(i - 1, Class.forName(metaData.getColumnClassName(i)));
+				classes.add(i - 1, forName(metaData.getColumnClassName(i)));
 			}
 			catch (ClassNotFoundException ex)
 			{
@@ -56,11 +59,11 @@ public class ResultSetUtils
 	 */
 	public static Map<String,String> getRowAsProperties(ResultSet rs) throws SQLException
 	{
-		Map<String,String> properties = Maps.newHashMap();
+		Map<String,String> properties = newHashMap();
 		List<String> columnNames = getColumnNames(rs);
 
 		for (int i = 1; i <= columnNames.size(); i++)
-			properties.put(columnNames.get(i-1), String.valueOf(rs.getObject(i))) ;
+			properties.put(columnNames.get(i-1), valueOf(rs.getObject(i))) ;
 
 		return properties;
 	}

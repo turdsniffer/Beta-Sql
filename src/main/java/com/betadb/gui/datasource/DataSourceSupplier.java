@@ -6,17 +6,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 
 
 public class DataSourceSupplier {
 
-	private static final Logger logger = Logger.getLogger(DataSourceSupplier.class.getName());
+	private static final Logger logger = getLogger(DataSourceSupplier.class.getName());
 	
 	private static DataSourceSupplier supplier;
 
-	private Map<String,DataSource>  datasourceMap = new HashMap<String, DataSource>();
+	private Map<String,DataSource>  datasourceMap = new HashMap<>();
 
 	private DataSourceSupplier()
 	{}	

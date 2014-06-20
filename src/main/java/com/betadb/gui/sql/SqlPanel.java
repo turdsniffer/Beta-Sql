@@ -21,7 +21,12 @@ import javax.swing.JFileChooser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import static java.lang.Integer.parseInt;
+import static java.util.logging.Logger.getLogger;
 import javax.swing.JOptionPane;
+import static javax.swing.JOptionPane.showInputDialog;
+import static javax.swing.KeyStroke.getKeyStroke;
+import static javax.swing.KeyStroke.getKeyStroke;
 
 /**
  *
@@ -46,7 +51,7 @@ public class SqlPanel extends javax.swing.JPanel
 		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
 		split.setAlignmentX(Component.LEFT_ALIGNMENT);
 		pnlMain.add(split);	
-		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("F5"),"execute");
+		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("F5"),"execute");
 		this.getActionMap().put("execute", new AbstractAction() 
 		{
 			@Override
@@ -56,7 +61,7 @@ public class SqlPanel extends javax.swing.JPanel
 			}
 		});
 		
-		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("control S"), "PRESS");
+		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("control S"), "PRESS");
         this.getActionMap().put("PRESS", new AbstractAction() 
 		{
 			@Override
@@ -106,7 +111,7 @@ public class SqlPanel extends javax.swing.JPanel
 		}
 		catch (IOException ex)
 		{
-			Logger.getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+			getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
 		}
 		finally
 		{
@@ -116,7 +121,7 @@ public class SqlPanel extends javax.swing.JPanel
 			}
 			catch (IOException ex)
 			{
-				Logger.getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+				getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}	
 	}
@@ -301,7 +306,7 @@ public class SqlPanel extends javax.swing.JPanel
 			}
 			catch (Exception ex)
 			{
-				Logger.getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+				getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
 			}
 			finally
 			{
@@ -311,7 +316,7 @@ public class SqlPanel extends javax.swing.JPanel
 				}
 				catch (IOException ex)
 				{
-					Logger.getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+					getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
 				}
 			}			
 		}
@@ -330,8 +335,8 @@ public class SqlPanel extends javax.swing.JPanel
 
     private void btnRepeatExecutionActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRepeatExecutionActionPerformed
     {//GEN-HEADEREND:event_btnRepeatExecutionActionPerformed
-        String inputValue = JOptionPane.showInputDialog(btnRepeatExecution,"Seconds between repeats: ", 5);
-		int repeatInterval = Integer.parseInt(inputValue);
+        String inputValue = showInputDialog(btnRepeatExecution,"Seconds between repeats: ", 5);
+		int repeatInterval = parseInt(inputValue);
 		executeSql(false, repeatInterval);
     }//GEN-LAST:event_btnRepeatExecutionActionPerformed
 

@@ -1,5 +1,7 @@
 package com.betadb.gui.dbobjects;
 
+import static java.lang.Integer.valueOf;
+
 /**
  * @author parmstrong
  */
@@ -20,7 +22,7 @@ public class Column extends DbObject
 	
 	public Integer getId()
 	{
-		return Integer.valueOf(getProperty("column_id").toString());
+		return valueOf(getProperty("column_id").toString());
 	}
 
 	public void setDataType(String dataType)
@@ -37,5 +39,11 @@ public class Column extends DbObject
 	public String getAutoCompleteId()
 	{
 		return getName();
+	}
+
+	@Override
+	public String getDescription()
+	{
+		return dataType;
 	}
 }

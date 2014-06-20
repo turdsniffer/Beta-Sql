@@ -2,15 +2,23 @@ package com.betadb.gui.autocomplete;
 
 import com.swingautocompletion.util.TextEditorUtils;
 import com.google.common.collect.Lists;
+import static com.google.common.collect.Lists.newArrayList;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.SearchTermProvider;
 import com.swingautocompletion.main.SimpleAutoCompleteItem;
 import com.swingautocompletion.main.SubSuggestionsWordSearchProvider;
 import com.swingautocompletion.util.Pair;
+import static com.swingautocompletion.util.TextEditorUtils.getCurrentTextBlock;
+import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
+import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
+import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
+import static com.swingautocompletion.util.TextEditorUtils.getWordBounds;
+import static com.swingautocompletion.util.TextEditorUtils.getWordBounds;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.util.regex.Pattern.compile;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -18,8 +26,8 @@ import javax.swing.text.JTextComponent;
  */
 public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearchProvider implements SearchTermProvider
 {
-	private static final List WORD_SEPARATORS = Lists.newArrayList(' ', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
-	private static final List ALIAS_SEPARATORS = Lists.newArrayList(' ', '.', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
+	private static final List WORD_SEPARATORS = newArrayList(' ', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
+	private static final List ALIAS_SEPARATORS = newArrayList(' ', '.', '\n', '\t', ',', ';', '!', '?', '\'', '(', ')', '[', ']', '\"', '{', '}', '/', '\\', '<', '>');
 
 
 
@@ -28,10 +36,10 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	{
 		Pair<Integer, Integer> currentWordBounds;
 		if(isCurrentTermAnAlias(textComponent))
-			currentWordBounds = TextEditorUtils.getWordBounds(textComponent, ALIAS_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+			currentWordBounds = getWordBounds(textComponent, ALIAS_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
 		else
-			currentWordBounds = TextEditorUtils.getWordBounds(textComponent, WORD_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
-		return TextEditorUtils.getCurrentWord(currentWordBounds, textComponent);
+			currentWordBounds = getWordBounds(textComponent, WORD_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+		return getCurrentWord(currentWordBounds, textComponent);
 	}
 
 
@@ -46,7 +54,7 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	@Override
 	public List<AutoCompleteItem> getItemsToSearchForSubSuggestions(JTextComponent textComponent)
 	{
-		String currentWord = TextEditorUtils.getCurrentWord(textComponent, WORD_SEPARATORS);
+		String currentWord = getCurrentWord(textComponent, WORD_SEPARATORS);
 		if (currentWord.endsWith(".") && currentWord.length() > 1)
 			return getItemsForAlias(textComponent, currentWord);
 		return getItemsDefault(textComponent);
@@ -55,10 +63,10 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	private List<AutoCompleteItem> getItemsForAlias(JTextComponent textComponent, String currentWord)
 	{
 		currentWord = currentWord.substring(0, currentWord.length() - 1);
-		Pattern p = Pattern.compile("\\b" + currentWord + "\\b");
-		ArrayList<AutoCompleteItem> alias = Lists.newArrayList();
+		Pattern p = compile("\\b" + currentWord + "\\b");
+		ArrayList<AutoCompleteItem> alias = newArrayList();
 
-		String currentTextBlock = TextEditorUtils.getCurrentTextBlock(textComponent);
+		String currentTextBlock = getCurrentTextBlock(textComponent);
 		Matcher matcher = p.matcher(currentTextBlock);
 		if (matcher.find())
 		{
@@ -79,21 +87,21 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 
 	private boolean isCurrentTermAnAlias(JTextComponent textComponent)
 	{
-		String currentWord = TextEditorUtils.getCurrentWord(textComponent, WORD_SEPARATORS);
+		String currentWord = getCurrentWord(textComponent, WORD_SEPARATORS);
 		if(!currentWord.contains("."))
 			return false;
 		String alias = currentWord.substring(0, currentWord.indexOf("."));
-		Pattern p = Pattern.compile("\\s" + alias + "\\s");
+		Pattern p = compile("\\s" + alias + "\\s");
 
-		String currentTextBlock = TextEditorUtils.getCurrentTextBlock(textComponent);
+		String currentTextBlock = getCurrentTextBlock(textComponent);
 		Matcher matcher = p.matcher(currentTextBlock);
 		return matcher.find();
 	}
 
 	private List<AutoCompleteItem> getItemsDefault(JTextComponent textComponent)
 	{
-		String block = TextEditorUtils.getCurrentTextBlock(textComponent).toLowerCase();
-		ArrayList<AutoCompleteItem> items = Lists.newArrayList();
+		String block = getCurrentTextBlock(textComponent).toLowerCase();
+		ArrayList<AutoCompleteItem> items = newArrayList();
 
 		if (block == null)
 			return items;

@@ -20,7 +20,7 @@ public class ColumnClassTableCellRenderer extends DefaultTableCellRenderer
 
 	public ColumnClassTableCellRenderer()
 	{
-		classRendererMap = new HashMap<Class, CellClassRenderer>();
+		classRendererMap = new HashMap<>();
 	}
 
 	@Override

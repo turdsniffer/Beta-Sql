@@ -1,15 +1,11 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * Main.java
  *
  * Created on Jun 14, 2011, 3:22:35 PM
  */
 package com.betadb.gui;
 
+import static com.betadb.gui.MainWindow.getInstance;
 import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.connection.ConnectionsPanel;
 import com.betadb.gui.events.Event;
@@ -26,12 +22,11 @@ import net.infonode.docking.util.DockingUtil;
 import net.infonode.docking.util.ViewMap;
 import static com.betadb.gui.events.Event.*;
 import java.awt.Dimension;
-import java.awt.Image;
+import static java.awt.EventQueue.invokeLater;
 import java.awt.Toolkit;
-import java.net.MalformedURLException;
+import static java.awt.Toolkit.getDefaultToolkit;
 import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static net.infonode.docking.util.DockingUtil.createRootWindow;
 
 /**
  *
@@ -60,15 +55,16 @@ public class MainWindow extends javax.swing.JFrame implements EventListener
 			this.setTitle("Beta-DB SQL Editor");
 			initComponents();
 			URL resource = getClass().getResource("/com/betadb/gui/icons/betadb.png");
-			this.setIconImage(Toolkit.getDefaultToolkit().getImage(resource));
+			this.setIconImage(getDefaultToolkit().getImage(resource));
 			this.setSize(new Dimension(1900, 1000));
 			EventManager.getInstance().addEventListener(this);
 			tabWindow = new TabWindow();
+
 			ViewMap viewMap = new ViewMap();
 			viewMap.addView(0, new View("Connections", null, ConnectionsPanel.getInstance()));
 			viewMap.addView(1, new View("ObjectDetails", null, ObjectDetailsPanel.getInstance()));
 
-			rootWindow = DockingUtil.createRootWindow(viewMap, true);
+			rootWindow = createRootWindow(viewMap, true);
 			rootWindow.setWindow(new SplitWindow(true, 0.15f, new SplitWindow(false, .80f, viewMap.getView(0), viewMap.getView(1)), tabWindow));
 
 			rootWindow.setVisible(true);
@@ -104,11 +100,11 @@ public class MainWindow extends javax.swing.JFrame implements EventListener
 	 */
 	public static void main(String args[])
 	{
-		java.awt.EventQueue.invokeLater(new Runnable()
+		invokeLater(new Runnable()
 		{
 			public void run()
 			{
-				MainWindow.getInstance().setVisible(true);
+				getInstance().setVisible(true);
 			}
 		});
 	}

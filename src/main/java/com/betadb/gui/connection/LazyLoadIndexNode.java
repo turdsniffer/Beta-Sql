@@ -16,9 +16,9 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadIndexNode extends LazyLoadNode
 {
-	private DbInfoDAO dbInfoDAO;
-	private String dbName;
-	private Table table;
+	private final DbInfoDAO dbInfoDAO;
+	private final String dbName;
+	private final Table table;
 
 	
 	public LazyLoadIndexNode(DataSource datasource, String dbName, Table table, DefaultTreeModel treeModel)

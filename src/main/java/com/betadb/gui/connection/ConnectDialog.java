@@ -13,6 +13,7 @@ package com.betadb.gui.connection;
 import com.betadb.gui.MainWindow;
 import com.betadb.gui.datasource.DataSourceSupplier;
 import com.betadb.gui.datasource.DatabaseType;
+import static com.betadb.gui.datasource.DatabaseType.values;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventManager;
 import com.google.gson.Gson;
@@ -22,10 +23,10 @@ import java.awt.Component;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
+import static java.util.prefs.Preferences.userRoot;
 
 /**
  *
@@ -53,11 +54,11 @@ public class ConnectDialog extends javax.swing.JDialog
 	private ConnectDialog()
 	{
 		initComponents();
-		for (DatabaseType type : DatabaseType.values())
+		for (DatabaseType type : values())
 			cbDatabaseType.addItem(type);
 
 		this.getRootPane().setDefaultButton(btnConnect);
-		prefs = Preferences.userRoot().node(this.getClass().getName());
+		prefs = userRoot().node(this.getClass().getName());
 		gson = new Gson();
 		//if someone is starting to type in a new connection disable the delete connection button.
 		Component editorComponent = cbServer.getEditor().getEditorComponent();
@@ -232,7 +233,7 @@ public class ConnectDialog extends javax.swing.JDialog
 
 	private void btnConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnConnectActionPerformed
 	{//GEN-HEADEREND:event_btnConnectActionPerformed
-		DataSourceSupplier instance = DataSourceSupplier.getInstance();
+		DataSourceSupplier datasourceSupplier = DataSourceSupplier.getInstance();
 		String userName = txtUserName.getText();
 		String server = cbServer.getSelectedItem().toString();
 		String password = new String(txtPassword.getPassword());
@@ -243,9 +244,9 @@ public class ConnectDialog extends javax.swing.JDialog
 
 		try
 		{
-			instance.getDataSource(databaseType, server, userName, password, dbName, domain, instanceName);
+			datasourceSupplier.getDataSource(databaseType, server, userName, password, dbName, domain, instanceName);
 			this.setVisible(false);
-			EventManager.getInstance().fireEvent(Event.DATA_SOURCE_ADDED, instance.getDataSourceKey(server, instanceName, dbName));
+			EventManager.getInstance().fireEvent(Event.DATA_SOURCE_ADDED, datasourceSupplier.getDataSourceKey(server, instanceName, dbName));
 			saveConnectionToPreferences(server, userName, domain, instanceName);
 		} catch (Exception e)
 		{
@@ -340,7 +341,7 @@ public class ConnectDialog extends javax.swing.JDialog
 	private List<ConnectionInfo> getSavedConnections()
 	{
 		String savedConnections = prefs.get("savedConnections", null);
-		Type collectionType = new TypeToken<List<ConnectionInfo>>(){}.getType();
+		java.lang.reflect.Type collectionType = new TypeToken<List<ConnectionInfo>>(){}.getType();
 		List<ConnectionInfo> connections = gson.fromJson(savedConnections, collectionType);
 		return connections == null ? new ArrayList<ConnectionInfo>() : connections;
 	}

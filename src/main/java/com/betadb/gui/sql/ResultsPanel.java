@@ -11,11 +11,12 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
-import com.betadb.gui.datasource.DataSourceSupplier;
-import com.betadb.gui.datasource.SQLUtils;
+import static com.betadb.gui.datasource.DataSourceSupplier.getInstance;
+import static com.betadb.gui.datasource.SQLUtils.close;
 import com.betadb.gui.dbobjects.DbInfo;
-import com.betadb.gui.jdbc.util.ResultSetUtils;
-import com.betadb.gui.table.util.renderer.RendererUtils;
+import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnClasses;
+import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnNames;
+import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -28,8 +29,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -62,7 +64,7 @@ public class ResultsPanel extends javax.swing.JPanel
 	{
 		initComponents();
 		timer = new Timer(0, null);
-		ds = DataSourceSupplier.getInstance().getDataSourceByDbId(connectionInfo.getDataSourceKey());
+		ds = getInstance().getDataSourceByDbId(connectionInfo.getDataSourceKey());
 		dbInfo = connectionInfo.getDbInfo();
 		messagePanel = new MessagePanel();
 		jSplitPane1.setBottomComponent(messagePanel);
@@ -102,8 +104,8 @@ public class ResultsPanel extends javax.swing.JPanel
 
 	private Component getResultsTable(ResultSet rs) throws SQLException
 	{
-		List<String> columnNames = ResultSetUtils.getColumnNames(rs);
-		List<Class> columnClasses = ResultSetUtils.getColumnClasses(rs);
+		List<String> columnNames = getColumnNames(rs);
+		List<Class> columnClasses = getColumnClasses(rs);
 
 		ArrayList<Object[]> data = getData(rs, columnNames);
 
@@ -138,7 +140,7 @@ public class ResultsPanel extends javax.swing.JPanel
 		table.addMouseMotionListener(rowNumberColumnMouseListener);
 
 		table.setComponentPopupMenu(new ResultTablePopup());
-		RendererUtils.formatColumns(table, new ResultsPanelTableCellRenderer());
+		formatColumns(table, new ResultsPanelTableCellRenderer());
 		table.getColumnModel().getColumn(0).setPreferredWidth(40);
 		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();
 		table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener()
@@ -155,7 +157,7 @@ public class ResultsPanel extends javax.swing.JPanel
 
 	private ArrayList<Object[]> getData(ResultSet rs, List<String> columnNames) throws SQLException
 	{
-		ArrayList<Object[]> data = new ArrayList<Object[]>();
+		ArrayList<Object[]> data = new ArrayList<>();
 		Object[] row;
 
 		while (rs.next())
@@ -232,7 +234,7 @@ public class ResultsPanel extends javax.swing.JPanel
 		protected List<Component> doInBackground() throws Exception
 		{
 
-			List<Component> results = new ArrayList<Component>();
+			List<Component> results = new ArrayList<>();
 
 			Connection conn = null;
 			stmt = null;
@@ -262,8 +264,8 @@ public class ResultsPanel extends javax.swing.JPanel
 					}
 					while (!((stmt.getMoreResults() == false) && (stmt.getUpdateCount() == -1)));
 
-					SQLUtils.close(stmt);
-					SQLUtils.close(rs);
+					close(stmt);
+					close(rs);
 				}
 			}
 			catch (Exception e)
@@ -276,7 +278,7 @@ public class ResultsPanel extends javax.swing.JPanel
 			}
 			finally
 			{
-				SQLUtils.close(conn, stmt, rs);
+				close(conn, stmt, rs);
 			}
 
 			messagePanel.addMessage(message);
@@ -298,9 +300,9 @@ public class ResultsPanel extends javax.swing.JPanel
 				pnlResults.revalidate();
 
 			}
-			catch (Exception ex)
+			catch (InterruptedException | ExecutionException ex)
 			{
-				Logger.getLogger(ResultsPanel.class.getName()).log(Level.SEVERE, null, ex);
+				getLogger(ResultsPanel.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
 	}

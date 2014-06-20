@@ -18,7 +18,7 @@ public class Table extends DbObject
 
 	public Table()
 	{
-		columns = new ArrayList<Column>();
+		columns = new ArrayList<>();
 	}
 
 	public List<Column> getColumns()
@@ -34,7 +34,7 @@ public class Table extends DbObject
 	@Override
 	public List<? extends AutoCompleteItem> getSubSuggestions()
 	{
-		return new ArrayList<AutoCompleteItem>(columns);
+		return new ArrayList<>(columns);
 	}	
 
 	public List<Index> getIndexes()

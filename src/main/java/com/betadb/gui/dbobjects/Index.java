@@ -15,7 +15,7 @@ public class Index extends DbObject
 
 	public Index()
 	{
-		columns = new ArrayList<Column>();
+		columns = new ArrayList<>();
 	}
 
 	public int getId()

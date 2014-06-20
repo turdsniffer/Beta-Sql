@@ -13,7 +13,7 @@ public class EventManager
 
 	private EventManager()
 	{
-		listeners = new ArrayList<EventListener>();
+		listeners = new ArrayList<>();
 	}
 	
 	public static EventManager getInstance()
@@ -25,7 +25,7 @@ public class EventManager
 	
 	public void fireEvent(Event evt, Object value)
 	{
-		ArrayList<EventListener> eventListeners = new ArrayList<EventListener>(listeners);//make a copy because our firing of events might result in other event listeners being created and added to the list.
+		ArrayList<EventListener> eventListeners = new ArrayList<>(listeners);//make a copy because our firing of events might result in other event listeners being created and added to the list.
 		for (EventListener eventListener : eventListeners)
 			eventListener.EventOccurred(evt, value);
 	}	

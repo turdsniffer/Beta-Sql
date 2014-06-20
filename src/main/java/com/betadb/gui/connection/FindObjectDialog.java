@@ -5,9 +5,11 @@
 package com.betadb.gui.connection;
 
 import com.betadb.gui.autocomplete.BetaDbPopupListCellRenderer;
+import static com.betadb.gui.connection.ConnectionsPanel.getInstance;
 import com.betadb.gui.dbobjects.DbInfo;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventManager;
+import static com.betadb.gui.events.EventManager.getInstance;
 import com.swingautocompletion.main.AutoCompleteHandler;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
