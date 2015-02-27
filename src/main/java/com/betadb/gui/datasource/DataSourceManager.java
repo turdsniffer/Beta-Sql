@@ -1,5 +1,9 @@
 package com.betadb.gui.datasource;
 
+import com.betadb.gui.events.Event;
+import com.betadb.gui.events.EventManager;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -10,39 +14,28 @@ import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 
+@Singleton
+public class DataSourceManager {
 
-public class DataSourceSupplier {
+	private static final Logger logger = getLogger(DataSourceManager.class.getName());
 
-	private static final Logger logger = getLogger(DataSourceSupplier.class.getName());
+	private final Map<DataSourceKey,DataSource>  datasourceMap = new HashMap<>();
+	@Inject private EventManager eventManager;
 	
-	private static DataSourceSupplier supplier;
-
-	private Map<String,DataSource>  datasourceMap = new HashMap<>();
-
-	private DataSourceSupplier()
-	{}	
-	
-	public static DataSourceSupplier getInstance()
-	{		
-		if(supplier == null)
-			supplier = new DataSourceSupplier();
-		return supplier;
-	}	
-	
-	public Map<String,DataSource> getDataSources()
+	public Map<DataSourceKey,DataSource> getDataSources()
 	{
 		return datasourceMap;
 	}
 	
-	public DataSource getDataSource(DatabaseType databaseType, String dbServerName, String username, String password, String dbName, String domain, String instanceName)
+	public DataSource getDataSource(DataSourceKey key, DatabaseType databaseType, String username, String password,  String domain)
 	{
-		DataSource ds = datasourceMap.get(getDataSourceKey(dbServerName, instanceName,""));
+		DataSource ds = datasourceMap.get(key);
 		if(ds==null)
 		{
 			try
 			{
-				ds = initDataAccess(databaseType, dbServerName, username, password, dbName, domain, instanceName);
-				datasourceMap.put(getDataSourceKey(dbServerName, instanceName, dbName), ds);
+				ds = initDataAccess(key, databaseType, username, password, domain);
+				addDataSource(key, ds);
 			}
 			catch (SQLException ex)
 			{
@@ -52,10 +45,16 @@ public class DataSourceSupplier {
 		}
 		return ds;
 	}
-	
-	public DataSource getDataSourceByDbId(String dbIdentifier)
+
+	public void addDataSource(DataSourceKey key, DataSource ds)
 	{
-		return datasourceMap.get(dbIdentifier);
+		datasourceMap.put(key, ds);
+		eventManager.fireEvent(Event.DATA_SOURCE_ADDED, key);
+	}
+	
+	public DataSource getDataSourceByDbId(DataSourceKey key)
+	{
+		return datasourceMap.get(key);
 	}
 
 	public String getDataSourceKey(String dbServerName, String instanceName, String dbName)
@@ -71,7 +70,7 @@ public class DataSourceSupplier {
 	}
 	
 
-	private DataSource initDataAccess(DatabaseType databaseType, String dbServerName, String username, String password, String dbName, String domain, String instanceName) throws SQLException
+	private DataSource initDataAccess(DataSourceKey key, DatabaseType databaseType, String username, String password, String domain) throws SQLException
 	{
 		BasicDataSource dataSource = null;
 		Connection connection = null;
@@ -87,13 +86,13 @@ public class DataSourceSupplier {
 			dataSource.setMaxActive( 100 );
 			dataSource.setMaxIdle( 30 );
 			dataSource.setDriverClassName( databaseType.getDriverClassName() );
-			String connectUrl = databaseType.getUrl()+dbServerName;
-			if(dbName!= null && dbName.length()>0)
-				connectUrl+="/"+dbName;				
+			String connectUrl = databaseType.getUrl()+key.getDbServerName();
+			if(key.getDbName()!= null && key.getDbName().length()>0)
+				connectUrl+="/"+key.getDbName();
 			if(domain != null && domain.length()>0)
 				connectUrl+=";domain="+domain;		
-			if(instanceName != null && instanceName.length()>0)
-				connectUrl+=";instance="+instanceName;
+			if(key.getInstanceName() != null && key.getInstanceName().length()>0)
+				connectUrl+=";instance="+key.getInstanceName();
 			dataSource.setUrl(connectUrl);
 			dataSource.setUsername( username  );
 			dataSource.setPassword( password );
