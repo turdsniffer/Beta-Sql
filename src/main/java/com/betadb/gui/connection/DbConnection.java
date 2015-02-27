@@ -1,5 +1,6 @@
 package com.betadb.gui.connection;
 
+import com.betadb.gui.datasource.DataSourceKey;
 import com.betadb.gui.dbobjects.DbInfo;
 
 
@@ -8,18 +9,18 @@ import com.betadb.gui.dbobjects.DbInfo;
  */
 public class DbConnection
 {
-	private DbInfo dbInfo;
-	private String dataSourceKey;
-	private String startingSql;
+	private final DbInfo dbInfo;
+	private final DataSourceKey dataSourceKey;
+	private final String startingSql;
 
-	public DbConnection(DbInfo dbInfo, String dataSourceKey)
+	public DbConnection(DbInfo dbInfo, DataSourceKey dataSourceKey)
 	{
 		this.dbInfo = dbInfo;
 		this.dataSourceKey= dataSourceKey;
 		this.startingSql = "";
 	}
 
-	public DbConnection(DbInfo dbInfo, String dataSourceKey, String startingSql)
+	public DbConnection(DbInfo dbInfo, DataSourceKey dataSourceKey, String startingSql)
 	{
 		this.dbInfo = dbInfo;
 		this.dataSourceKey = dataSourceKey;
@@ -31,7 +32,7 @@ public class DbConnection
 		return dbInfo;
 	}
 
-	public String getDataSourceKey()
+	public DataSourceKey getDataSourceKey()
 	{
 		return dataSourceKey;
 	}

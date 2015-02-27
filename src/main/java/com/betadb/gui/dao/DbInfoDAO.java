@@ -13,6 +13,7 @@ import com.betadb.gui.dbobjects.View;
 import com.betadb.gui.exception.BetaDbException;
 import com.betadb.gui.jdbc.util.ResultSetUtils;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getRowAsProperties;
+import com.betadb.gui.script.ScriptUtils;
 import com.betadb.gui.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
 import static com.google.common.collect.ArrayListMultimap.create;
@@ -239,6 +240,9 @@ public class DbInfoDAO
 
 	public String getScript(DbObject dbObject, String dbName) throws SQLException
 	{
+		if(dbObject instanceof Table)
+			return ScriptUtils.scriptTable((Table)dbObject);
+
 		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." + dbObject.getName() + "'";
 		QueryRunner runner = new QueryRunner(ds);
 		List<String> results = (List) runner.query(sql, new ColumnListHandler());

@@ -16,6 +16,7 @@ public class Table extends DbObject
 	private List<ForeignKey> foreignKeys;
 	private List<PrimaryKey> primaryKeys;
 
+
 	public Table()
 	{
 		columns = new ArrayList<>();

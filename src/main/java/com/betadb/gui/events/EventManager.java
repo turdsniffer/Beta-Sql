@@ -1,26 +1,20 @@
 package com.betadb.gui.events;
 
+import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author parmstrong
  */
+@Singleton
 public class EventManager
 {
 	private List<EventListener> listeners;
-	private static EventManager eventManager;
 
-	private EventManager()
+	EventManager()
 	{
 		listeners = new ArrayList<>();
-	}
-	
-	public static EventManager getInstance()
-	{
-		if(eventManager == null)
-			eventManager = new EventManager();
-		return eventManager;
 	}
 	
 	public void fireEvent(Event evt, Object value)

@@ -5,36 +5,30 @@ import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
 import com.betadb.gui.table.util.ZebraTableRenderer;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Vector;
 import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author parmstrong
  */
+@Singleton
 public class ObjectDetailsPanel extends javax.swing.JPanel implements EventListener
 {
-	private static ObjectDetailsPanel objectDetailsPanel;
-	
-	public static ObjectDetailsPanel getInstance()
-	{
-		if(objectDetailsPanel == null)
-			objectDetailsPanel = new ObjectDetailsPanel();
-		return objectDetailsPanel;		
-	}
-	
 	DefaultTableModel model;
 	
     /** Creates new form NewJPanel */
-    public ObjectDetailsPanel() {
+	@Inject
+    public ObjectDetailsPanel(EventManager eventManager) {
         initComponents();
 		model = new DefaultTableModel();
 		model.addColumn("Name");
 		model.addColumn("Value");
 		tblDbObjectDetails.setModel(model);
-		EventManager.getInstance().addEventListener(this);
+		eventManager.addEventListener(this);
 		tblDbObjectDetails.setDefaultRenderer(Object.class, new ZebraTableRenderer());
     }
 	

@@ -11,13 +11,16 @@
 package com.betadb.gui.connection;
 
 import com.betadb.gui.MainWindow;
-import com.betadb.gui.datasource.DataSourceSupplier;
+import com.betadb.gui.datasource.DataSourceKey;
+import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.datasource.DatabaseType;
 import static com.betadb.gui.datasource.DatabaseType.values;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ItemEvent;
@@ -32,27 +35,20 @@ import static java.util.prefs.Preferences.userRoot;
  *
  * @author parmstrong
  */
+@Singleton
 public class ConnectDialog extends javax.swing.JDialog
-{
-
-	private static ConnectDialog connectDialog;
+{	
 	private final Preferences prefs;
 	private final Gson gson;
-
-	public static ConnectDialog getInstance()
-	{
-		if (connectDialog == null)
-			connectDialog = new ConnectDialog();
-
-		connectDialog.setLocationRelativeTo(MainWindow.getInstance());
-		return connectDialog;
-	}
-
+	@Inject EventManager eventManager;
+	@Inject DataSourceManager dataSourceManager;
+	//@Inject MainWindow mainWindow;
 	/**
 	 * Creates new form ConnectDialog
 	 */
+	@Inject
 	private ConnectDialog()
-	{
+	{		
 		initComponents();
 		for (DatabaseType type : values())
 			cbDatabaseType.addItem(type);
@@ -233,7 +229,7 @@ public class ConnectDialog extends javax.swing.JDialog
 
 	private void btnConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnConnectActionPerformed
 	{//GEN-HEADEREND:event_btnConnectActionPerformed
-		DataSourceSupplier datasourceSupplier = DataSourceSupplier.getInstance();
+		DataSourceManager datasourceSupplier = dataSourceManager;
 		String userName = txtUserName.getText();
 		String server = cbServer.getSelectedItem().toString();
 		String password = new String(txtPassword.getPassword());
@@ -244,9 +240,10 @@ public class ConnectDialog extends javax.swing.JDialog
 
 		try
 		{
-			datasourceSupplier.getDataSource(databaseType, server, userName, password, dbName, domain, instanceName);
+			DataSourceKey dataSourceKey = new DataSourceKey(server, instanceName, dbName);
+			datasourceSupplier.getDataSource(dataSourceKey, databaseType, userName, password, domain);
 			this.setVisible(false);
-			EventManager.getInstance().fireEvent(Event.DATA_SOURCE_ADDED, datasourceSupplier.getDataSourceKey(server, instanceName, dbName));
+			eventManager.fireEvent(Event.DATA_SOURCE_ADDED, datasourceSupplier.getDataSourceKey(server, instanceName, dbName));
 			saveConnectionToPreferences(server, userName, domain, instanceName);
 		} catch (Exception e)
 		{
@@ -320,6 +317,7 @@ public class ConnectDialog extends javax.swing.JDialog
 	
 	public void setVisible(boolean visible)
 	{
+		//this.setLocationRelativeTo(mainWindow);
 		lblMsg.setText("");
 		if(visible)
 		{

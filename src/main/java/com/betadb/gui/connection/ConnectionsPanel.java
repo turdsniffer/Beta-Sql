@@ -1,7 +1,8 @@
 package com.betadb.gui.connection;
 
 import com.betadb.gui.dao.DbInfoDAO;
-import com.betadb.gui.datasource.DataSourceSupplier;
+import com.betadb.gui.datasource.DataSourceKey;
+import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
 import com.betadb.gui.dbobjects.Table;
@@ -9,6 +10,8 @@ import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -32,27 +35,28 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @author parmstrong
  */
+@Singleton
 public class ConnectionsPanel extends javax.swing.JPanel implements EventListener
-{
-	private static ConnectionsPanel connectionsPanel;
-	private static DataSourceSupplier dataSourceSupplier = DataSourceSupplier.getInstance();
+{	
+	
 	private DefaultMutableTreeNode root;
 	private DefaultTreeModel treeModel;
-
-	public static ConnectionsPanel getInstance()
-	{
-		if (connectionsPanel == null)
-			connectionsPanel = new ConnectionsPanel();
-		return connectionsPanel;
-	}
+	private EventManager eventManager;
+	@Inject FindObjectDialog findObjectDialog;
+	@Inject ConnectDialog connectDialog;
+	@Inject TablePrivileges tablePrivileges;
+	@Inject private DataSourceManager dataSourceManager;
+	
 
 	/**
 	 * Creates new form ConnectionsPanel
 	 */
-	private ConnectionsPanel()
+	@Inject
+	private ConnectionsPanel(EventManager eventManager)
 	{
 
-		EventManager.getInstance().addEventListener(this);
+		eventManager.addEventListener(this);
+		this.eventManager = eventManager;
 		initComponents();
 		treeDbs.setEditable(false);
 		treeDbs.addMouseListener(new NodeMouseListener());
@@ -60,11 +64,11 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		treeDbs.setCellRenderer(new ConnectionsTreeCellRenderer());
 	}
 
-	private void addDataSource(String dataSourceKey)
+	private void addDataSource(DataSourceKey dataSourceKey)
 	{
 		try
 		{			
-			DataSource dataSource = dataSourceSupplier.getDataSourceByDbId(dataSourceKey);
+			DataSource dataSource = dataSourceManager.getDataSourceByDbId(dataSourceKey);
 
 			DefaultMutableTreeNode server = new DefaultMutableTreeNode(dataSourceKey);
 			addDataBases(dataSource, server);
@@ -87,7 +91,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		DbInfoDAO dao = new DbInfoDAO(dataSource);
 		infos = dao.getDatabases();
 		for (DbInfo dbInfo : infos)
-			top.add(new LazyDbInfoNode(dbInfo, dataSource, treeModel, treeDbs));
+			top.add(new LazyDbInfoNode(dbInfo, dataSource, treeModel, treeDbs, eventManager));
 	}
 
 	@Override
@@ -95,7 +99,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	{
 		if (event == DATA_SOURCE_ADDED)
 		{		
-			addDataSource((String) value);
+			addDataSource((DataSourceKey) value);
 		}
 		if (event == DB_OBJECT_SELECTED)
 		{
@@ -240,7 +244,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 	private void btnAddDataSourceActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAddDataSourceActionPerformed
 	{//GEN-HEADEREND:event_btnAddDataSourceActionPerformed
-		ConnectDialog.getInstance().setVisible(true);
+		connectDialog.setVisible(true);
 	}//GEN-LAST:event_btnAddDataSourceActionPerformed
 
 	private void btnConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnConnectActionPerformed
@@ -252,8 +256,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			return;
 		DbInfo dbInfo = ((LazyDbInfoNode) node).getDbInfo();
 		treeDbs.expandPath(new TreePath(node.getPath()));		
-		String dataSourceKey = ((DefaultMutableTreeNode) node.getParent()).getUserObject().toString();
-		EventManager.getInstance().fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
+		DataSourceKey dataSourceKey = (DataSourceKey)((DefaultMutableTreeNode) node.getParent()).getUserObject();
+		eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
 	}//GEN-LAST:event_btnConnectActionPerformed
 
 	private void treeDbsValueChanged(javax.swing.event.TreeSelectionEvent evt)//GEN-FIRST:event_treeDbsValueChanged
@@ -262,7 +266,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		Object userObject = lastPathComponent.getUserObject();
 
 		if (userObject instanceof DbObject)
-			EventManager.getInstance().fireEvent(DB_OBJECT_SELECTED, userObject);
+			eventManager.fireEvent(DB_OBJECT_SELECTED, userObject);
 	}//GEN-LAST:event_treeDbsValueChanged
 
 	private void refreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_refreshActionPerformed
@@ -282,12 +286,12 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 			DataSource dataSource = getDataSourceForNode(node);
 			DbInfo dbInfo = getDbInfoForNode(node);
-			String server = getServerForNode(node);
+			DataSourceKey server = getServerForNode(node);
 			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
 			DbObject userObject = (DbObject) node.getUserObject();
 
 			String script = dbInfoDAO.getScript(userObject, dbInfo.getDbName());
-			EventManager.getInstance().fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, server, script));
+			eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, server, script));
 		}
 		catch (SQLException ex)
 		{
@@ -295,17 +299,17 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		}
 	}//GEN-LAST:event_btnScriptActionPerformed
 
-	private String getServerForNode(DefaultMutableTreeNode node)
+	private DataSourceKey getServerForNode(DefaultMutableTreeNode node)
 	{
 		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		return  ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject().toString();
+		return  (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
 	}
 
 	private DataSource getDataSourceForNode(DefaultMutableTreeNode node)
 	{
 		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		String server = ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject().toString();
-		return dataSourceSupplier.getDataSourceByDbId(server);
+		DataSourceKey key = (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
+		return dataSourceManager.getDataSourceByDbId(key);
 	}
 
 	private DbInfo getDbInfoForNode(DefaultMutableTreeNode node)
@@ -330,7 +334,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		
 		LazyDbInfoNode dbNode = (LazyDbInfoNode)node;
 		dbNode.load();
-		FindObjectDialog findObjectDialog = new FindObjectDialog(dbNode.getDbInfo());
+		findObjectDialog.show(dbNode.getDbInfo());
 		findObjectDialog.setLocationRelativeTo(this);
 		findObjectDialog.setVisible(true);
     }//GEN-LAST:event_btnFindActionPerformed
@@ -348,7 +352,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
 			DbInfo dbInfo = getDbInfoForNode(node);
 			List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges(dbInfo.getDbName(), table);
-			TablePrivileges.getInstance().show(tablePrivileges);
+			this.tablePrivileges.show(tablePrivileges);
 
 		}
 		catch (SQLException ex)
@@ -410,15 +414,9 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 					if (userObject instanceof DbObject)
 					{
 						if (userObject instanceof Table)
-						{
-							btnScript.setVisible(false);
 							btnPrivileges.setVisible(true);
-						}
 						else
-						{
-							btnScript.setVisible(true);
-							btnPrivileges.setVisible(false);
-						}
+							btnPrivileges.setVisible(false);						
 
 						dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
 					}

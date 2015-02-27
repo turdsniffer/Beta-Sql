@@ -1,11 +1,5 @@
-/*
- * Main.java
- *
- * Created on Jun 14, 2011, 3:22:35 PM
- */
 package com.betadb.gui;
 
-import static com.betadb.gui.MainWindow.getInstance;
 import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.connection.ConnectionsPanel;
 import com.betadb.gui.events.Event;
@@ -18,14 +12,20 @@ import net.infonode.docking.RootWindow;
 import net.infonode.docking.SplitWindow;
 import net.infonode.docking.TabWindow;
 import net.infonode.docking.View;
-import net.infonode.docking.util.DockingUtil;
 import net.infonode.docking.util.ViewMap;
 import static com.betadb.gui.events.Event.*;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Provider;
 import java.awt.Dimension;
 import static java.awt.EventQueue.invokeLater;
-import java.awt.Toolkit;
 import static java.awt.Toolkit.getDefaultToolkit;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import static net.infonode.docking.util.DockingUtil.createRootWindow;
 
 /**
@@ -34,42 +34,37 @@ import static net.infonode.docking.util.DockingUtil.createRootWindow;
  */
 public class MainWindow extends javax.swing.JFrame implements EventListener
 {
-	private RootWindow rootWindow;
+	private final RootWindow rootWindow;
 	private TabWindow tabWindow;
-	private static MainWindow mainwindow;
-
-	public static MainWindow getInstance()
-	{
-		if (mainwindow == null)
-		{
-			mainwindow = new MainWindow();
-		}
-		return mainwindow;
-	}
+	@Inject
+	private Provider<SqlPanel> sqlPanelProvider;
 
 	/**
 	 * Creates new form Main
 	 */
-	public MainWindow()
+	@Inject
+	public MainWindow(EventManager eventManager, ConnectionsPanel connectionsPanel, ObjectDetailsPanel objectDetailsPanel)
 	{
-			this.setTitle("Beta-DB SQL Editor");
-			initComponents();
-			URL resource = getClass().getResource("/com/betadb/gui/icons/betadb.png");
-			this.setIconImage(getDefaultToolkit().getImage(resource));
-			this.setSize(new Dimension(1900, 1000));
-			EventManager.getInstance().addEventListener(this);
-			tabWindow = new TabWindow();
 
-			ViewMap viewMap = new ViewMap();
-			viewMap.addView(0, new View("Connections", null, ConnectionsPanel.getInstance()));
-			viewMap.addView(1, new View("ObjectDetails", null, ObjectDetailsPanel.getInstance()));
 
-			rootWindow = createRootWindow(viewMap, true);
-			rootWindow.setWindow(new SplitWindow(true, 0.15f, new SplitWindow(false, .80f, viewMap.getView(0), viewMap.getView(1)), tabWindow));
+		this.setTitle("Beta-DB SQL Editor");
+		initComponents();
+		URL resource = getClass().getResource("/com/betadb/gui/icons/betadb.png");
+		this.setIconImage(getDefaultToolkit().getImage(resource));
+		this.setSize(new Dimension(1900, 1000));
+		eventManager.addEventListener(this);
+		this.tabWindow = new TabWindow();
 
-			rootWindow.setVisible(true);
-			this.setLayout(new BorderLayout());
-			this.add(rootWindow, BorderLayout.CENTER);
+		ViewMap viewMap = new ViewMap();
+		viewMap.addView(0, new View("Connections", null, connectionsPanel));
+		viewMap.addView(1, new View("ObjectDetails", null, objectDetailsPanel));
+
+		rootWindow = createRootWindow(viewMap, true);
+		rootWindow.setWindow(new SplitWindow(true, 0.15f, new SplitWindow(false, .80f, viewMap.getView(0), viewMap.getView(1)), tabWindow));
+
+		rootWindow.setVisible(true);
+		this.setLayout(new BorderLayout());
+		this.add(rootWindow, BorderLayout.CENTER);
 	}
 
 	/**
@@ -104,7 +99,9 @@ public class MainWindow extends javax.swing.JFrame implements EventListener
 		{
 			public void run()
 			{
-				getInstance().setVisible(true);
+				Injector injector = Guice.createInjector(new GuiceModule());
+				MainWindow instance = injector.getInstance(MainWindow.class);
+				instance.setVisible(true);
 			}
 		});
 	}
@@ -117,7 +114,11 @@ public class MainWindow extends javax.swing.JFrame implements EventListener
 		if (event == SQL_CONNECTION_REQUESTED)
 		{
 			DbConnection connectionInfo = (DbConnection) value;
-			View view = new View(connectionInfo.getDataSourceKey() + " (" + connectionInfo.getDbInfo().getDbName() + ")", null, new SqlPanel(connectionInfo));
+			SqlPanel sqlPanel = sqlPanelProvider.get();
+			sqlPanel.setDbConnectInfo(connectionInfo);
+			View view = new View(connectionInfo.getDataSourceKey() + " (" + connectionInfo.getDbInfo().getDbName() + ")", null, sqlPanel);
+			
+
 			tabWindow.addTab(view);
 		}
 	}

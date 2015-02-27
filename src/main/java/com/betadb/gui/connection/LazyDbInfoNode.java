@@ -9,7 +9,8 @@ import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
 import static com.betadb.gui.events.Event.DB_INFO_UPDATED;
-import static com.betadb.gui.events.EventManager.getInstance;
+import com.betadb.gui.events.EventManager;
+
 import com.betadb.gui.exception.BetaDbException;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -26,14 +27,16 @@ public class LazyDbInfoNode extends LazyLoadNode
 {
 	private final DbInfo dbInfo;
 	private final JTree treeDbs;
+	private final EventManager eventManager;
 
-	public LazyDbInfoNode(DbInfo dbInfo, DataSource datasource, DefaultTreeModel treeModel, JTree treeDbs)
+	public LazyDbInfoNode(DbInfo dbInfo, DataSource datasource, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
 	{
 		super(dbInfo, datasource, treeModel);
 		this.dbInfo = dbInfo;
 		this.dataSource = datasource;
 		this.treeModel = treeModel;
 		this.treeDbs = treeDbs;
+		this.eventManager = eventManager;
 		
 	}
 
@@ -90,7 +93,7 @@ public class LazyDbInfoNode extends LazyLoadNode
 			addViews(i++);
 			addFunctions(i++);
 			treeDbs.expandPath(new TreePath(dbNode.getPath()));
-			getInstance().fireEvent(DB_INFO_UPDATED, dbInfo);
+			eventManager.fireEvent(DB_INFO_UPDATED, dbInfo);
 			
 
 		}

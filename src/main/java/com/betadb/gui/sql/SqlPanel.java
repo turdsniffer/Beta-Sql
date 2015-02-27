@@ -7,25 +7,22 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
+import com.google.inject.Inject;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
 import javax.swing.JSplitPane;
-import javax.swing.KeyStroke;
 import javax.swing.JFileChooser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import static java.lang.Integer.parseInt;
 import static java.util.logging.Logger.getLogger;
-import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.showInputDialog;
-import static javax.swing.KeyStroke.getKeyStroke;
 import static javax.swing.KeyStroke.getKeyStroke;
 
 /**
@@ -38,16 +35,14 @@ public class SqlPanel extends javax.swing.JPanel
 	private final ResultsPanel resultsPanel;
 	private final JFileChooser fileChooser;
 	private String filePath;
-	
-	
-	
-    /** Creates new form SqlPanel */
-    public SqlPanel(DbConnection connectionInfo) 
+
+	@Inject
+    public SqlPanel(ResultsPanel resultsPanel, EditorPanel editorPanel)
 	{			
         initComponents();	
 		fileChooser = new JFileChooser();
-		resultsPanel = new ResultsPanel(connectionInfo);
-		editorPanel = new EditorPanel(connectionInfo);
+		this.resultsPanel = resultsPanel;
+		this.editorPanel = editorPanel;
 		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
 		split.setAlignmentX(Component.LEFT_ALIGNMENT);
 		pnlMain.add(split);	
@@ -71,6 +66,12 @@ public class SqlPanel extends javax.swing.JPanel
 			}
 		});
     }
+
+	public void setDbConnectInfo(DbConnection connectionInfo)
+	{
+		resultsPanel.setDbConnectInfo(connectionInfo);
+		editorPanel.setDbConnectInfo(connectionInfo);
+	}
 
 	private void executeSql(boolean executeAll)
 	{

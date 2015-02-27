@@ -11,12 +11,13 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
-import static com.betadb.gui.datasource.DataSourceSupplier.getInstance;
+import com.betadb.gui.datasource.DataSourceManager;
 import static com.betadb.gui.datasource.SQLUtils.close;
 import com.betadb.gui.dbobjects.DbInfo;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnClasses;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnNames;
 import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
+import com.google.inject.Inject;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -56,20 +57,28 @@ public class ResultsPanel extends javax.swing.JPanel
 	private MessagePanel messagePanel;
 	private Timer timer;
 	private QueryExecutor queryExecutor;
+	@Inject ResultTablePopup resultTablePopup;
+	@Inject DataSourceManager dataSourceManager;
 
 	/**
 	 * Creates new form ResultsPanel
 	 */
-	public ResultsPanel(DbConnection connectionInfo)
+	@Inject
+	public ResultsPanel(MessagePanel messagePanel)
 	{
 		initComponents();
 		timer = new Timer(0, null);
-		ds = getInstance().getDataSourceByDbId(connectionInfo.getDataSourceKey());
-		dbInfo = connectionInfo.getDbInfo();
-		messagePanel = new MessagePanel();
+		this.messagePanel = messagePanel;
 		jSplitPane1.setBottomComponent(messagePanel);
 		jSplitPane1.setResizeWeight(1);
 	}
+
+	public void setDbConnectInfo(DbConnection connectionInfo)
+	{
+		ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
+		dbInfo = connectionInfo.getDbInfo();
+	}
+
 
 	public void executeSql(String sql)
 	{
@@ -139,7 +148,7 @@ public class ResultsPanel extends javax.swing.JPanel
 		table.addMouseListener(rowNumberColumnMouseListener);
 		table.addMouseMotionListener(rowNumberColumnMouseListener);
 
-		table.setComponentPopupMenu(new ResultTablePopup());
+		table.setComponentPopupMenu(resultTablePopup);
 		formatColumns(table, new ResultsPanelTableCellRenderer());
 		table.getColumnModel().getColumn(0).setPreferredWidth(40);
 		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();

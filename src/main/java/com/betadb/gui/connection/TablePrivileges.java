@@ -6,8 +6,9 @@ package com.betadb.gui.connection;
 
 import com.betadb.gui.MainWindow;
 import com.betadb.gui.table.util.renderer.ColumnClassTableCellRenderer;
-import com.betadb.gui.table.util.renderer.RendererUtils;
 import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import javax.swing.table.DefaultTableModel;
@@ -16,24 +17,18 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author parmstrong
  */
+@Singleton
 public class TablePrivileges extends javax.swing.JDialog
 {
 	private DefaultTableModel model;
-	private static TablePrivileges instance;
-
-	public static TablePrivileges getInstance()
-	{
-		if (instance == null)
-			instance = new TablePrivileges();
-		return instance;
-	}
 
 	/**
 	 * Creates new form TablePrivileges
 	 */
+	@Inject
 	private TablePrivileges()
 	{
-		super(MainWindow.getInstance());
+		//super(mainWindow);
 
 		initComponents();
 

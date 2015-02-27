@@ -10,7 +10,8 @@
  */
 package com.betadb.gui.cellviewer;
 
-import static com.betadb.gui.cellviewer.CellViewer.getInstance;
+
+import com.google.inject.Singleton;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +20,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.logging.Level;
 import static java.util.logging.Logger.getLogger;
-import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -44,25 +44,16 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
  *
  * @author parmstrong
  */
+@Singleton
 public class CellViewer extends javax.swing.JFrame
 {
-
-	private static CellViewer cellViewer;
 	private final RSyntaxTextArea textViewer;
 	private final JScrollPane scrPane;
-
-	public static CellViewer getInstance()
-	{
-		if (cellViewer == null)
-			cellViewer = new CellViewer();
-		cellViewer.setLocationRelativeTo(null);
-		return cellViewer;
-	}
 
 	/**
 	 * Creates new form CellViewer
 	 */
-	private CellViewer()
+	public CellViewer()
 	{
 		this.setTitle("Cell Details");
 		this.setPreferredSize(new Dimension(600, 450));
@@ -75,7 +66,7 @@ public class CellViewer extends javax.swing.JFrame
 			@Override
 			public void actionPerformed(ActionEvent ae)
 			{
-				getInstance().formatTextAsXml();
+				CellViewer.this.formatTextAsXml();
 			}
 		});
 		

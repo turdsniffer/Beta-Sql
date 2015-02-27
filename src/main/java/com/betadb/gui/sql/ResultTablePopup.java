@@ -1,8 +1,7 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.cellviewer.CellViewer;
-import static com.betadb.gui.cellviewer.CellViewer.getInstance;
-import java.awt.Toolkit;
+import com.google.inject.Inject;
 import static java.awt.Toolkit.getDefaultToolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
@@ -17,7 +16,8 @@ import javax.swing.JTable;
  */
 public class ResultTablePopup extends JPopupMenu
 {
-	public ResultTablePopup()
+	@Inject
+	public ResultTablePopup(final CellViewer cellViewer)
 	{
 		super();
 		JMenuItem btnCopyIn = new JMenuItem("Copy as SQL IN statement");
@@ -111,7 +111,7 @@ public class ResultTablePopup extends JPopupMenu
 				int selectedRow = table.getSelectedRow();
 				Class columnClass = table.getColumnClass(selectedColumn);
 				Object cellValue = table.getValueAt(selectedRow, selectedColumn);
-				getInstance().setValue(columnClass, cellValue);
+				cellViewer.setValue(columnClass, cellValue);
 			}
 		});
 		this.add(btnViewer);
