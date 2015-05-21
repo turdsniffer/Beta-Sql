@@ -28,10 +28,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import javax.swing.BoxLayout;
@@ -53,7 +55,9 @@ public class ResultsPanel extends javax.swing.JPanel
 {
 	private DataSource ds;
 	private DbInfo dbInfo;
-	private PreparedStatement stmt;
+	private Connection conn;
+	private Statement stmt;
+	
 	private MessagePanel messagePanel;
 	private Timer timer;
 	private QueryExecutor queryExecutor;
@@ -75,8 +79,15 @@ public class ResultsPanel extends javax.swing.JPanel
 
 	public void setDbConnectInfo(DbConnection connectionInfo)
 	{
+	    try {
 		ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
 		dbInfo = connectionInfo.getDbInfo();
+		conn = ds.getConnection();
+		conn.setCatalog(dbInfo.getDbName());
+	
+	    } catch (SQLException ex) {
+		Logger.getLogger(ResultsPanel.class.getName()).log(Level.SEVERE, null, ex);
+	    }
 	}
 
 
@@ -242,26 +253,18 @@ public class ResultsPanel extends javax.swing.JPanel
 		@Override
 		protected List<Component> doInBackground() throws Exception
 		{
-
 			List<Component> results = new ArrayList<>();
-
-			Connection conn = null;
-			stmt = null;
 			ResultSet rs = null;
 			String message = "Query Finished Successfully";
-
+			
 			try
 			{
-				conn = ds.getConnection();
-				conn.setCatalog(dbInfo.getDbName());				
-
+			    	stmt = conn.createStatement();
+				stmt.setFetchSize(500);
 				String[] statements = sql.split("(?im)^\\s*GO\\s*$");
 				for (String sql : statements)
-				{
-					stmt = conn.prepareStatement(sql);
-					stmt.setFetchSize(500);
-					stmt.execute();
-
+				{					
+					stmt.execute(sql);
 					do
 					{
 						rs = stmt.getResultSet();
@@ -271,9 +274,7 @@ public class ResultsPanel extends javax.swing.JPanel
 						results.add(getResultsTable(rs));
 
 					}
-					while (!((stmt.getMoreResults() == false) && (stmt.getUpdateCount() == -1)));
-
-					close(stmt);
+					while (!((stmt.getMoreResults() == false) && (stmt.getUpdateCount() == -1)));			
 					close(rs);
 				}
 			}
@@ -287,7 +288,8 @@ public class ResultsPanel extends javax.swing.JPanel
 			}
 			finally
 			{
-				close(conn, stmt, rs);
+				close(rs);
+				close(stmt);
 			}
 
 			messagePanel.addMessage(message);
