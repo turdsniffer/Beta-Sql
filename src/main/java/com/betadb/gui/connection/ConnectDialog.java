@@ -54,7 +54,8 @@ public class ConnectDialog extends javax.swing.JDialog
 			cbDatabaseType.addItem(type);
 
 		this.getRootPane().setDefaultButton(btnConnect);
-		prefs = userRoot().node(this.getClass().getName());
+		prefs = Preferences.userNodeForPackage(this.getClass());
+		
 		gson = new Gson();
 		//if someone is starting to type in a new connection disable the delete connection button.
 		Component editorComponent = cbServer.getEditor().getEditorComponent();
@@ -243,13 +244,13 @@ public class ConnectDialog extends javax.swing.JDialog
 			DataSourceKey dataSourceKey = new DataSourceKey(server, instanceName, dbName);
 			datasourceSupplier.getDataSource(dataSourceKey, databaseType, userName, password, domain);
 			this.setVisible(false);
-			eventManager.fireEvent(Event.DATA_SOURCE_ADDED, datasourceSupplier.getDataSourceKey(server, instanceName, dbName));
 			saveConnectionToPreferences(server, userName, domain, instanceName);
 		} catch (Exception e)
 		{
 			lblMsg.setText("Error getting a connection.");
 			lblMsg.setToolTipText(e.getMessage());
 			lblMsg.setForeground(Color.RED);
+			throw new IllegalStateException(e);
 		}
 	}//GEN-LAST:event_btnConnectActionPerformed
 
