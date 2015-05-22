@@ -6,6 +6,7 @@ package com.betadb.gui.connection;
 
 import com.betadb.gui.autocomplete.BetaDbPopupListCellRenderer;
 import com.betadb.gui.dbobjects.DbInfo;
+import com.betadb.gui.dbobjects.DbObject;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventManager;
 import com.google.inject.Inject;
@@ -24,27 +25,24 @@ import com.swingautocompletion.main.SubSuggestionsWordSearchProvider;
 @Singleton
 public class FindObjectDialog extends javax.swing.JDialog
 {
-	ConnectionsPanel connectionsPanel;
-	DbInfo dbInfo;
-	AutoCompletePopup autoCompletePopup;
-	@Inject
-	EventManager eventManager;
+	private final AutoCompletePopup autoCompletePopup;
+	@Inject	private EventManager eventManager;
 	/**
 	 * Creates new form FindObjectDialog
 	 */
 	@Inject
-	public FindObjectDialog(ConnectionsPanel connectionsPanel)
+	public FindObjectDialog()
 	{
 		initComponents();
+		autoCompletePopup = new AutoCompletePopup(txtSearch, new BetaDbPopupListCellRenderer(), new SubSuggestionsWordSearchProvider(), new DefaultSearchTermProvider());
 		this.setTitle("Find Object");
 	}
 
 	public void show(DbInfo dbInfo)
 	{
-		autoCompletePopup = new AutoCompletePopup(txtSearch, new BetaDbPopupListCellRenderer(), new SubSuggestionsWordSearchProvider(), new DefaultSearchTermProvider());
 		autoCompletePopup.setAutoCompletePossibilties(dbInfo.getAllDbObjects());
-		autoCompletePopup.addAutoCompleteHandler(new AutoCompleteHandler() {
-
+		autoCompletePopup.addAutoCompleteHandler(new AutoCompleteHandler() 
+		{
 			@Override
 			public void handle(AutoCompleteItem autoCompleteItem)
 			{
