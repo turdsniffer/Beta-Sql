@@ -17,7 +17,9 @@ public class DbObject extends AutoCompleteItem
 	private int objectId;
 	private String schemaName;
 	private Map<String,String> properties = new TreeMap<>();
-
+	private DbObjectType objectType;
+	
+	
 	public String getName()
 	{
 		return name;
@@ -86,5 +88,21 @@ public class DbObject extends AutoCompleteItem
 	public Object getProperty(String name)
 	{
 		return properties.get(name);
+	}
+
+	/**
+	 * @return the objectType
+	 */
+	public DbObjectType getObjectType()
+	{
+		return objectType;
+	}
+
+	/**
+	 * @param objectType the objectType to set
+	 */
+	public void setObjectType(DbObjectType objectType)
+	{
+		this.objectType = objectType;
 	}
 }

@@ -5,11 +5,15 @@ import com.betadb.gui.datasource.DataSourceKey;
 import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.dbobjects.DbObjectType;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.awt.event.MouseAdapter;
@@ -22,8 +26,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.showMessageDialog;
+import javax.swing.JSeparator;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -42,10 +48,14 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	private DefaultMutableTreeNode root;
 	private DefaultTreeModel treeModel;
 	private EventManager eventManager;
+	private Multimap<DbObjectType, JMenuItem> contextMenuButtonMap = HashMultimap.create();
+	private List<JMenuItem> defaultContextButtons;
+	
 	@Inject FindObjectDialog findObjectDialog;
 	@Inject ConnectDialog connectDialog;
 	@Inject TablePrivileges tablePrivileges;
 	@Inject private DataSourceManager dataSourceManager;
+	
 	
 
 	/**
@@ -54,7 +64,6 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 	@Inject
 	private ConnectionsPanel(EventManager eventManager)
 	{
-
 		eventManager.addEventListener(this);
 		this.eventManager = eventManager;
 		initComponents();
@@ -62,6 +71,12 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 		treeDbs.addMouseListener(new NodeMouseListener());
 		treeDbs.addTreeExpansionListener(new NodeExpansionListener());
 		treeDbs.setCellRenderer(new ConnectionsTreeCellRenderer());
+		defaultContextButtons = Lists.newArrayList(btnConnect,btnFind, refresh);
+		contextMenuButtonMap.putAll(DbObjectType.FUNCTION, Lists.newArrayList(btnScript));
+		contextMenuButtonMap.putAll(DbObjectType.PROCEDURE, Lists.newArrayList(btnScript));
+		contextMenuButtonMap.putAll(DbObjectType.VIEW, Lists.newArrayList(btnScript,btnPrivileges));
+		contextMenuButtonMap.putAll(DbObjectType.TABLE, Lists.newArrayList(btnPrivileges));
+		
 	}
 
 	private void addDataSource(DataSourceKey dataSourceKey)
@@ -131,13 +146,13 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private void initComponents()
     {
 
-        dbPopupMenu = new javax.swing.JPopupMenu();
-        btnConnect = new javax.swing.JMenuItem();
-        refresh = new javax.swing.JMenuItem();
-        btnFind = new javax.swing.JMenuItem();
         dbObjectPopupMenu = new javax.swing.JPopupMenu();
         btnScript = new javax.swing.JMenuItem();
         btnPrivileges = new javax.swing.JMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        btnConnect = new javax.swing.JMenuItem();
+        refresh = new javax.swing.JMenuItem();
+        btnFind = new javax.swing.JMenuItem();
         jToolBar1 = new javax.swing.JToolBar();
         btnAddDataSource = new javax.swing.JButton();
         pnlConnections = new javax.swing.JPanel();
@@ -147,36 +162,6 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
         treeDbs = new javax.swing.JTree(treeModel);
         treeDbs.setRootVisible(false);
         treeDbs.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-
-        btnConnect.setText("New Connection");
-        btnConnect.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                btnConnectActionPerformed(evt);
-            }
-        });
-        dbPopupMenu.add(btnConnect);
-
-        refresh.setText("Refresh");
-        refresh.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                refreshActionPerformed(evt);
-            }
-        });
-        dbPopupMenu.add(refresh);
-
-        btnFind.setText("Find...");
-        btnFind.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                btnFindActionPerformed(evt);
-            }
-        });
-        dbPopupMenu.add(btnFind);
 
         btnScript.setText("Script...");
         btnScript.addActionListener(new java.awt.event.ActionListener()
@@ -197,6 +182,37 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
             }
         });
         dbObjectPopupMenu.add(btnPrivileges);
+        dbObjectPopupMenu.add(jSeparator1);
+
+        btnConnect.setText("New Connection");
+        btnConnect.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnConnectActionPerformed(evt);
+            }
+        });
+        dbObjectPopupMenu.add(btnConnect);
+
+        refresh.setText("Refresh");
+        refresh.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                refreshActionPerformed(evt);
+            }
+        });
+        dbObjectPopupMenu.add(refresh);
+
+        btnFind.setText("Find...");
+        btnFind.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnFindActionPerformed(evt);
+            }
+        });
+        dbObjectPopupMenu.add(btnFind);
 
         jToolBar1.setRollover(true);
 
@@ -254,9 +270,13 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		DbInfo dbInfo = ((LazyDbInfoNode) node).getDbInfo();
-		treeDbs.expandPath(new TreePath(node.getPath()));		
-		DataSourceKey dataSourceKey = (DataSourceKey)((DefaultMutableTreeNode) node.getParent()).getUserObject();
+		if(node instanceof LazyDbInfoNode)
+			treeDbs.expandPath(new TreePath(node.getPath()));
+		
+		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+		DbInfo dbInfo = dbInfoNode.getDbInfo();
+				
+		DataSourceKey dataSourceKey = (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
 		eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
 	}//GEN-LAST:event_btnConnectActionPerformed
 
@@ -275,8 +295,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		LazyLoadNode dbNode = (LazyLoadNode)node;
-		dbNode.load(true);
+		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+		dbInfoNode.load(true);
 	}//GEN-LAST:event_refreshActionPerformed
 
 	private void btnScriptActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnScriptActionPerformed
@@ -331,8 +351,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 		if (node == null)
 			return;
-		
-		LazyDbInfoNode dbNode = (LazyDbInfoNode)node;
+		LazyDbInfoNode dbNode = getDbInfoNode(node);
 		dbNode.load();
 		findObjectDialog.show(dbNode.getDbInfo());
 		findObjectDialog.setLocationRelativeTo(this);
@@ -368,8 +387,8 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private javax.swing.JMenuItem btnPrivileges;
     private javax.swing.JMenuItem btnScript;
     private javax.swing.JPopupMenu dbObjectPopupMenu;
-    private javax.swing.JPopupMenu dbPopupMenu;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JPanel pnlConnections;
     private javax.swing.JMenuItem refresh;
@@ -409,17 +428,21 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 				{
 					DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) selPath.getLastPathComponent();
 					Object userObject = lastPathComponent.getUserObject();
-					if (lastPathComponent instanceof LazyDbInfoNode)
-						dbPopupMenu.show(e.getComponent(), e.getX(), e.getY());
-					if (userObject instanceof DbObject)
+					dbObjectPopupMenu.removeAll();
+					
+					
+					
+					if(userObject instanceof DbObject)
 					{
-						if (userObject instanceof Table)
-							btnPrivileges.setVisible(true);
-						else
-							btnPrivileges.setVisible(false);						
-
-						dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
-					}
+						for (JMenuItem menuItem : contextMenuButtonMap.get(((DbObject)userObject).getObjectType()))
+							dbObjectPopupMenu.add(menuItem);
+						dbObjectPopupMenu.add(new JSeparator());
+					}	
+						
+					if(userObject instanceof DbObject ||  userObject instanceof DbInfo)
+						for (JMenuItem defaultContextButton : defaultContextButtons)
+							dbObjectPopupMenu.add(defaultContextButton);
+					dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
 				}
 			}
 		}

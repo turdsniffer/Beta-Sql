@@ -63,7 +63,7 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	private List<AutoCompleteItem> getItemsForAlias(JTextComponent textComponent, String currentWord)
 	{
 		currentWord = currentWord.substring(0, currentWord.length() - 1);
-		Pattern p = compile("\\b" + currentWord + "\\b");
+		Pattern p = compile("\\b" + currentWord + "\\b", Pattern.CASE_INSENSITIVE);
 		ArrayList<AutoCompleteItem> alias = newArrayList();
 
 		String currentTextBlock = getCurrentTextBlock(textComponent);

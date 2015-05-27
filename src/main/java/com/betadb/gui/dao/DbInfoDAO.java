@@ -3,6 +3,7 @@ package com.betadb.gui.dao;
 import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.dbobjects.DbObjectType;
 import com.betadb.gui.dbobjects.ForeignKey;
 import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Parameter;
@@ -11,15 +12,12 @@ import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
 import com.betadb.gui.exception.BetaDbException;
-import com.betadb.gui.jdbc.util.ResultSetUtils;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getRowAsProperties;
 import com.betadb.gui.script.ScriptUtils;
 import com.betadb.gui.util.Pair;
-import com.google.common.collect.ArrayListMultimap;
 import static com.google.common.collect.ArrayListMultimap.create;
 import com.google.common.collect.ListMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -28,16 +26,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
-import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.join;
 
 /**
@@ -156,9 +151,11 @@ public class DbInfoDAO
 		while (rs.next())
 		{
 			Table table = new Table();
+			table.setObjectType(DbObjectType.VIEW);
 			if ("VIEW".equals(rs.getString("TABLE_TYPE")))
 			{
 				View view = new View();
+				view.setObjectType(DbObjectType.VIEW);
 				views.add(view);
 				table = view;
 			}
@@ -181,6 +178,7 @@ public class DbInfoDAO
 		while (rs.next())
 		{
 			Column c = new Column();
+			c.setObjectType(DbObjectType.COLUMN);
 			c.setName(rs.getString("COLUMN_NAME"));
 			c.setSchemaName(rs.getString("TABLE_SCHEM"));
 			c.setDecimalDigits(rs.getInt("COLUMN_SIZE"));
@@ -200,6 +198,7 @@ public class DbInfoDAO
 		{
 			Procedure procedure = new Procedure();
 			String name = rs.getString("PROCEDURE_NAME");
+			procedure.setObjectType(DbObjectType.PROCEDURE);
 			procedure.setName(cleanUpName(name));
 			procedure.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
 			procedure.setProperties(getRowAsProperties(rs));
@@ -230,6 +229,7 @@ public class DbInfoDAO
 			if (rs.getShort("COLUMN_TYPE") != 1)
 				continue;
 			Parameter parameter = new Parameter();
+			parameter.setObjectType(DbObjectType.PARAMETER);
 			parameter.setName(rs.getString("COLUMN_NAME"));
 			parameter.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
 			parameter.setProperties(getRowAsProperties(rs));
@@ -240,7 +240,7 @@ public class DbInfoDAO
 
 	public String getScript(DbObject dbObject, String dbName) throws SQLException
 	{
-		if(dbObject instanceof Table)
+		if(dbObject.getObjectType().equals(DbObjectType.TABLE))
 			return ScriptUtils.scriptTable((Table)dbObject);
 
 		String sql = "use " + dbName + "; exec sp_helpText '" + dbObject.getSchemaName() + "." + dbObject.getName() + "'";
@@ -261,6 +261,7 @@ public class DbInfoDAO
 			while (rs.next())
 			{
 				Index index = new Index();
+				index.setObjectType(DbObjectType.INDEX);
 				index.setName(rs.getString("Index_Name"));
 				index.setSchemaName(rs.getString("TABLE_SCHEM"));
 				index.setProperties(getRowAsProperties(rs));
@@ -287,6 +288,7 @@ public class DbInfoDAO
 			while (rs.next())
 			{
 				ForeignKey foreignKey = new ForeignKey();
+				foreignKey.setObjectType(DbObjectType.FOREIGN_KEY);
 				foreignKey.setName(rs.getString("FK_NAME"));
 				foreignKey.setSchemaName(table.getSchemaName());
 				foreignKey.setProperties(getRowAsProperties(rs));
@@ -313,6 +315,7 @@ public class DbInfoDAO
 			while (rs.next())
 			{
 				PrimaryKey primaryKey = new PrimaryKey();
+				primaryKey.setObjectType(DbObjectType.PRIMARY_KEY);
 				primaryKey.setName(rs.getString("PK_NAME"));
 				primaryKey.setSchemaName(table.getSchemaName());
 				primaryKey.setProperties(getRowAsProperties(rs));

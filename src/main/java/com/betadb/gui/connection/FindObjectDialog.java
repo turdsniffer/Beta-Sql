@@ -6,7 +6,6 @@ package com.betadb.gui.connection;
 
 import com.betadb.gui.autocomplete.BetaDbPopupListCellRenderer;
 import com.betadb.gui.dbobjects.DbInfo;
-import com.betadb.gui.dbobjects.DbObject;
 import static com.betadb.gui.events.Event.*;
 import com.betadb.gui.events.EventManager;
 import com.google.inject.Inject;
