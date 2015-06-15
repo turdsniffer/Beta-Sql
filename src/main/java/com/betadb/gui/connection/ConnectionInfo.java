@@ -15,13 +15,15 @@ public class ConnectionInfo
 	private String userName;
 	private String domain;
 	private String instanceName;
+	private String port;
 
-	public ConnectionInfo(String serverName, String userName, String domain, String instanceName)
+	public ConnectionInfo(String serverName, String userName, String domain, String instanceName, String port)
 	{
 		this.serverName = serverName;
 		this.userName = userName;
 		this.domain = domain;
 		this.instanceName = instanceName;
+		this.port = port;
 	}
 
 	public String getServerName()
@@ -42,6 +44,11 @@ public class ConnectionInfo
 	public String getInstanceName()
 	{
 		return instanceName;
+	}
+	
+	public String getPort()
+	{
+		return port;
 	}
 
 	@Override
@@ -74,6 +81,5 @@ public class ConnectionInfo
 		String instanceNameSuffix = instanceName == null || instanceName.isEmpty() ? "" : "\\"+instanceName;
 		return serverName + instanceNameSuffix;
 	}
-	
-	
+
 }

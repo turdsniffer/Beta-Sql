@@ -7,6 +7,7 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
+import com.betadb.gui.queryanalyzer.SqlServerQueryAnalyzer;
 import com.google.inject.Inject;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -23,6 +24,7 @@ import java.io.FileWriter;
 import static java.lang.Integer.parseInt;
 import static java.util.logging.Logger.getLogger;
 import static javax.swing.JOptionPane.showInputDialog;
+import javax.swing.JScrollPane;
 import static javax.swing.KeyStroke.getKeyStroke;
 
 /**
@@ -34,18 +36,21 @@ public class SqlPanel extends javax.swing.JPanel
 	private final EditorPanel editorPanel;
 	private final ResultsPanel resultsPanel;
 	private final JFileChooser fileChooser;
+	private final JSplitPane splitPane;
+	private final SqlServerQueryAnalyzer queryAnalyzer;
 	private String filePath;
 
 	@Inject
-    public SqlPanel(ResultsPanel resultsPanel, EditorPanel editorPanel)
+    public SqlPanel(ResultsPanel resultsPanel, EditorPanel editorPanel, SqlServerQueryAnalyzer queryAnalyzer)
 	{			
         initComponents();	
 		fileChooser = new JFileChooser();
 		this.resultsPanel = resultsPanel;
 		this.editorPanel = editorPanel;
-		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
-		split.setAlignmentX(Component.LEFT_ALIGNMENT);
-		pnlMain.add(split);	
+		this.queryAnalyzer = queryAnalyzer;
+		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
+		splitPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+		pnlMain.add(splitPane);	
 		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("F5"),"execute");
 		this.getActionMap().put("execute", new AbstractAction() 
 		{
@@ -71,6 +76,7 @@ public class SqlPanel extends javax.swing.JPanel
 	{
 		resultsPanel.setDbConnectInfo(connectionInfo);
 		editorPanel.setDbConnectInfo(connectionInfo);
+		queryAnalyzer.setDbInfo(connectionInfo);
 	}
 
 	private void executeSql(boolean executeAll)
@@ -81,7 +87,17 @@ public class SqlPanel extends javax.swing.JPanel
 	private void executeSql(boolean executeAll, Integer repeatInterval)
 	{		
 		String sql = editorPanel.getSql(executeAll);
-		resultsPanel.executeSql(sql, repeatInterval);
+		if(btnAnalyzeQuery.isSelected())
+		{			
+			JScrollPane jScrollPane = new JScrollPane(queryAnalyzer);
+			splitPane.setBottomComponent(jScrollPane);
+			queryAnalyzer.analyze(sql);
+		}
+		else
+		{
+			resultsPanel.executeSql(sql, repeatInterval);			
+			splitPane.setBottomComponent(resultsPanel);
+		}
 	}
 	
 	private void save(boolean saveAs)
@@ -146,6 +162,7 @@ public class SqlPanel extends javax.swing.JPanel
         btnSaveAs = new javax.swing.JButton();
         btnOpenFile = new javax.swing.JButton();
         synchObjectsPane = new javax.swing.JButton();
+        btnAnalyzeQuery = new javax.swing.JToggleButton();
         pnlMain = new javax.swing.JPanel();
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.PAGE_AXIS));
@@ -264,6 +281,19 @@ public class SqlPanel extends javax.swing.JPanel
         });
         jToolBar1.add(synchObjectsPane);
 
+        btnAnalyzeQuery.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/heirarchy.png"))); // NOI18N
+        btnAnalyzeQuery.setFocusable(false);
+        btnAnalyzeQuery.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        btnAnalyzeQuery.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        btnAnalyzeQuery.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnAnalyzeQueryActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(btnAnalyzeQuery);
+
         add(jToolBar1);
 
         pnlMain.setLayout(new javax.swing.BoxLayout(pnlMain, javax.swing.BoxLayout.PAGE_AXIS));
@@ -347,7 +377,13 @@ public class SqlPanel extends javax.swing.JPanel
 		
     }//GEN-LAST:event_synchObjectsPaneActionPerformed
 
+    private void btnAnalyzeQueryActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAnalyzeQueryActionPerformed
+    {//GEN-HEADEREND:event_btnAnalyzeQueryActionPerformed
+       
+    }//GEN-LAST:event_btnAnalyzeQueryActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JToggleButton btnAnalyzeQuery;
     private javax.swing.JButton btnCancelQuery;
     private javax.swing.JButton btnExecute;
     private javax.swing.JButton btnExecuteAll;

@@ -11,7 +11,8 @@ package com.betadb.gui.datasource;
 public enum DatabaseType
 {
 	MSSQL("MS Sql Server", "net.sourceforge.jtds.jdbc.Driver", "jdbc:jtds:sqlserver://"),
-	POSTGRES("Postgres", "org.postgresql.Driver", "jdbc:postgresql://");
+	POSTGRES("Postgres", "org.postgresql.Driver", "jdbc:postgresql://"),
+	SYBASE("Sybase","net.sourceforge.jtds.jdbc.Driver", "jdbc:jtds:sybase://");
 
 	private String displayName;
 	private String driverClassName;

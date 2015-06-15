@@ -27,14 +27,14 @@ public class DataSourceManager {
 		return datasourceMap;
 	}
 	
-	public DataSource getDataSource(DataSourceKey key, DatabaseType databaseType, String username, String password,  String domain)
+	public DataSource getDataSource(DataSourceKey key,String port, DatabaseType databaseType, String username, String password,  String domain)
 	{
 		DataSource ds = datasourceMap.get(key);
 		if(ds==null)
 		{
 			try
 			{
-				ds = initDataAccess(key, databaseType, username, password, domain);
+				ds = initDataAccess(key, port, databaseType, username, password, domain);
 				addDataSource(key, ds);
 			}
 			catch (SQLException ex)
@@ -70,7 +70,7 @@ public class DataSourceManager {
 	}
 	
 
-	private DataSource initDataAccess(DataSourceKey key, DatabaseType databaseType, String username, String password, String domain) throws SQLException
+	private DataSource initDataAccess(DataSourceKey key, String port, DatabaseType databaseType, String username, String password, String domain) throws SQLException
 	{
 		BasicDataSource dataSource = null;
 		Connection connection = null;
@@ -87,14 +87,17 @@ public class DataSourceManager {
 			dataSource.setMaxIdle( 30 );
 			dataSource.setDriverClassName( databaseType.getDriverClassName() );
 			String connectUrl = databaseType.getUrl()+key.getDbServerName();
+			if(port != null)
+				connectUrl+=":"+port;
 			if(key.getDbName()!= null && key.getDbName().length()>0)
 				connectUrl+="/"+key.getDbName();
 			if(domain != null && domain.length()>0)
 				connectUrl+=";domain="+domain;		
 			if(key.getInstanceName() != null && key.getInstanceName().length()>0)
 				connectUrl+=";instance="+key.getInstanceName();
+			
 			dataSource.setUrl(connectUrl);
-			dataSource.setUsername( username  );
+			dataSource.setUsername( username );
 			dataSource.setPassword( password );
 			dataSource.setValidationQuery( "select 1" );
 			connection = dataSource.getConnection();			

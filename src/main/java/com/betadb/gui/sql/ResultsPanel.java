@@ -25,7 +25,6 @@ import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -81,6 +80,7 @@ public class ResultsPanel extends javax.swing.JPanel
 	{
 	    try {
 		ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
+	
 		dbInfo = connectionInfo.getDbInfo();
 		conn = ds.getConnection();
 		conn.setCatalog(dbInfo.getDbName());
@@ -259,7 +259,7 @@ public class ResultsPanel extends javax.swing.JPanel
 			
 			try
 			{
-			    	stmt = conn.createStatement();
+			    stmt = conn.createStatement();
 				stmt.setFetchSize(500);
 				String[] statements = sql.split("(?im)^\\s*GO\\s*$");
 				for (String sql : statements)

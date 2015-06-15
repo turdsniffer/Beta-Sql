@@ -10,12 +10,10 @@
  */
 package com.betadb.gui.connection;
 
-import com.betadb.gui.MainWindow;
 import com.betadb.gui.datasource.DataSourceKey;
 import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.datasource.DatabaseType;
 import static com.betadb.gui.datasource.DatabaseType.values;
-import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -29,7 +27,6 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
-import static java.util.prefs.Preferences.userRoot;
 
 /**
  *
@@ -94,6 +91,8 @@ public class ConnectDialog extends javax.swing.JDialog
         jLabel6 = new javax.swing.JLabel();
         cbDatabaseType = new javax.swing.JComboBox();
         jLabel7 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        txtPort = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Create Connection");
@@ -142,6 +141,8 @@ public class ConnectDialog extends javax.swing.JDialog
 
         jLabel7.setText("Database Type:");
 
+        jLabel8.setText("Port:");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -170,9 +171,14 @@ public class ConnectDialog extends javax.swing.JDialog
                             .addComponent(txtDomain)
                             .addComponent(txtPassword)
                             .addComponent(txtUserName)
-                            .addComponent(cbServer, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(txtDbName)
-                            .addComponent(cbDatabaseType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(cbDatabaseType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(cbServer, javax.swing.GroupLayout.PREFERRED_SIZE, 288, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel8)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtPort)))))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -181,7 +187,9 @@ public class ConnectDialog extends javax.swing.JDialog
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(cbServer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(cbServer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel8)
+                    .addComponent(txtPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cbDatabaseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -237,14 +245,15 @@ public class ConnectDialog extends javax.swing.JDialog
 		String domain = txtDomain.getText();
 		String instanceName = txtInstanceName.getText();
 		String dbName = txtDbName.getText().isEmpty() ? null : txtDbName.getText();
+		String port = txtPort.getText().isEmpty()?null:txtPort.getText();
 		DatabaseType databaseType = (DatabaseType)cbDatabaseType.getSelectedItem();
 
 		try
 		{
 			DataSourceKey dataSourceKey = new DataSourceKey(server, instanceName, dbName);
-			datasourceSupplier.getDataSource(dataSourceKey, databaseType, userName, password, domain);
+			datasourceSupplier.getDataSource(dataSourceKey, port, databaseType, userName, password, domain);
 			this.setVisible(false);
-			saveConnectionToPreferences(server, userName, domain, instanceName);
+			saveConnectionToPreferences(server, userName, domain, instanceName, port);
 		} catch (Exception e)
 		{
 			lblMsg.setText("Error getting a connection.");
@@ -254,16 +263,15 @@ public class ConnectDialog extends javax.swing.JDialog
 		}
 	}//GEN-LAST:event_btnConnectActionPerformed
 
-	private void saveConnectionToPreferences(String serverName, String userName, String domain, String instanceName)
+	private void saveConnectionToPreferences(String serverName, String userName, String domain, String instanceName, String port)
 	{
-		ConnectionInfo connectionInfo = new ConnectionInfo(serverName, userName, domain, instanceName);
+		ConnectionInfo connectionInfo = new ConnectionInfo(serverName, userName, domain, instanceName, port);
 		List<ConnectionInfo> savedConnections = getSavedConnections();
 
 		//don't save an equivalent connection.
-		for (ConnectionInfo connection : savedConnections)
-			if (connection.equals(connectionInfo))
-				return;
-
+		if(savedConnections.contains(connectionInfo))
+			return;
+		
 		savedConnections.add(0, connectionInfo);
 		String savedConnectionsJson = gson.toJson(savedConnections);
 		prefs.put("savedConnections", savedConnectionsJson);
@@ -288,6 +296,7 @@ public class ConnectDialog extends javax.swing.JDialog
 				txtDomain.setText(connectionInfo.getDomain());
 				txtInstanceName.setText(connectionInfo.getInstanceName());
 				txtUserName.setText(connectionInfo.getUserName());
+				txtPort.setText(connectionInfo.getPort());
 				btnDelete.setEnabled(true);
 			}
 			else
@@ -356,12 +365,14 @@ public class ConnectDialog extends javax.swing.JDialog
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JLabel lblMsg;
     private javax.swing.JTextField txtDbName;
     private javax.swing.JTextField txtDomain;
     private javax.swing.JTextField txtInstanceName;
     private javax.swing.JPasswordField txtPassword;
+    private javax.swing.JTextField txtPort;
     private javax.swing.JTextField txtUserName;
     // End of variables declaration//GEN-END:variables
 }
