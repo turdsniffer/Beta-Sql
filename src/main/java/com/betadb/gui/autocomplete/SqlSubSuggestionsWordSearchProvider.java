@@ -1,7 +1,6 @@
 package com.betadb.gui.autocomplete;
 
 import com.swingautocompletion.util.TextEditorUtils;
-import com.google.common.collect.Lists;
 import static com.google.common.collect.Lists.newArrayList;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.SearchTermProvider;
@@ -10,9 +9,6 @@ import com.swingautocompletion.main.SubSuggestionsWordSearchProvider;
 import com.swingautocompletion.util.Pair;
 import static com.swingautocompletion.util.TextEditorUtils.getCurrentTextBlock;
 import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
-import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
-import static com.swingautocompletion.util.TextEditorUtils.getCurrentWord;
-import static com.swingautocompletion.util.TextEditorUtils.getWordBounds;
 import static com.swingautocompletion.util.TextEditorUtils.getWordBounds;
 import java.util.ArrayList;
 import java.util.List;

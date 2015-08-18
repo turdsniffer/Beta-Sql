@@ -32,7 +32,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.1.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>${profiler.args} -Xms512m -Xmx1024m -classpath %classpath com.betadb.gui.MainWindow</exec.args>
+                <exec.args>-Xms512m -Xmx1024m -classpath %classpath com.betadb.gui.MainWindow</exec.args>
                 <profiler.action>profile</profiler.action>
                 <exec.executable>${profiler.java}</exec.executable>
             </properties>

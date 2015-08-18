@@ -38,7 +38,8 @@ public class FindObjectDialog extends javax.swing.JDialog
 	}
 
 	public void show(DbInfo dbInfo)
-	{
+	{	
+		txtSearch.setText("");
 		autoCompletePopup.setAutoCompletePossibilties(dbInfo.getAllDbObjects());
 		autoCompletePopup.addAutoCompleteHandler(new AutoCompleteHandler() 
 		{

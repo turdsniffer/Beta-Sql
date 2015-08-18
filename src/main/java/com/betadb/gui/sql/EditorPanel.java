@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
+import com.betadb.gui.util.TemplateEditor;
 import com.google.inject.Inject;
 import com.swingautocompletion.util.TextEditorUtils;
 import java.awt.event.ActionEvent;
@@ -40,94 +41,112 @@ import org.fife.ui.rtextarea.SearchEngine;
 public class EditorPanel extends javax.swing.JPanel implements EventListener, ActionListener
 {
 
-	final private RSyntaxTextArea codeEditor;
-	final private AutoCompletePopup autoCompletePopup;
-	private DbInfo dbInfo;
+    private final RSyntaxTextArea codeEditor;
+    private final AutoCompletePopup autoCompletePopup;
+    private DbInfo dbInfo;
+    boolean isTemplateEditing = false;
+    private final TemplateEditor templateEditor;
 
-	/**
-	 * Creates new form EditorPanel
-	 *
-	 * @param connectionInfo
-	 */
-	@Inject
-	public EditorPanel(EventManager eventManager)
-	{
-		eventManager.addEventListener(this);
-		
-		initComponents();
+    /**
+     * Creates new form EditorPanel
+     *
+     * @param connectionInfo
+     */
+    @Inject
+    public EditorPanel(EventManager eventManager)
+    {
+        eventManager.addEventListener(this);
 
-		codeEditor = new RSyntaxTextArea();
-		codeEditor.setCodeFoldingEnabled(true);
-		KeyAdapter keyAdapter = new KeyAdapter()
-		{
-			@Override
-			public void keyPressed(KeyEvent e)
-			{
-				if (e.isConsumed()) return;
-				if(e.isControlDown() && e.getKeyCode() == KeyEvent.VK_F )
-				{
-					searchBar.setVisible(!searchBar.isVisible());
-					if(searchBar.isVisible())
-						txtSearchField.requestFocus();
-				}
-			}
-		};
-		codeEditor.addKeyListener(keyAdapter);
-		txtSearchField.addKeyListener(keyAdapter);
-		searchBar.setVisible(false);
-		SqlSubSuggestionsWordSearchProvider sqlSubSuggestionsWordSearchProvider = new SqlSubSuggestionsWordSearchProvider();
-		autoCompletePopup = new AutoCompletePopup(codeEditor, new BetaDbPopupListCellRenderer(), sqlSubSuggestionsWordSearchProvider, sqlSubSuggestionsWordSearchProvider);
-		
-		JScrollPane scrPane = new JScrollPane(codeEditor);
-		this.add(scrPane);
-		this.doLayout();
+        initComponents();
 
-		codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);		
-		codeEditor.addCaretListener(new WordHighlighter());//Highlight occurances of current word.
-	}
+        codeEditor = new RSyntaxTextArea();
+        codeEditor.setCodeFoldingEnabled(true);
+        KeyAdapter keyAdapter = new KeyAdapter()
+        {
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+                if (e.isConsumed())
+                {
+                    return;
+                }
+                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_F)
+                {
+                    searchBar.setVisible(!searchBar.isVisible());
+                    if (searchBar.isVisible())
+                    {
+                        txtSearchField.requestFocus();
+                    }
+                }
+            }
+        };
 
+        codeEditor.addKeyListener(keyAdapter);
+        templateEditor = new TemplateEditor(codeEditor);
+        txtSearchField.addKeyListener(keyAdapter);
+        searchBar.setVisible(false);
+        SqlSubSuggestionsWordSearchProvider sqlSubSuggestionsWordSearchProvider = new SqlSubSuggestionsWordSearchProvider();
+        autoCompletePopup = new AutoCompletePopup(codeEditor, new BetaDbPopupListCellRenderer(), sqlSubSuggestionsWordSearchProvider, sqlSubSuggestionsWordSearchProvider);
+        autoCompletePopup.addAutoCompleteHandler((AutoCompleteItem autoCompleteItem) ->
+        {
+            int startPosition = codeEditor.getCaretPosition() - autoCompleteItem.getAutoCompletion().length();
+                templateEditor.initiateTemplateEditing(startPosition, autoCompleteItem.getAutoCompletion().length());
+        });
 
-	public void setDbConnectInfo(DbConnection connectionInfo)
-	{
-		dbInfo = connectionInfo.getDbInfo();
-		codeEditor.setText(connectionInfo.getStartingSql());
-		refreshAutoCompleteOptions();
-	}
+        JScrollPane scrPane = new JScrollPane(codeEditor);
+        this.add(scrPane);
+        this.doLayout();
 
+        codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
+        codeEditor.addCaretListener(new WordHighlighter());//Highlight occurances of current word.
+    }
 
-	private void refreshAutoCompleteOptions()
-	{
-		List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<>();
-		autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
-		autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
-		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
-	}
+    
 
-	public void setSql(String sql)
-	{
-		codeEditor.setText(sql);
-	}
+    public void setDbConnectInfo(DbConnection connectionInfo)
+    {
+        dbInfo = connectionInfo.getDbInfo();
+        codeEditor.setText(connectionInfo.getStartingSql());
+        refreshAutoCompleteOptions();
+    }
 
-	public void appendSql(String sql)
-	{
-		String text = codeEditor.getText();
-		codeEditor.setText(text + "\n" + sql);
-	}
+    private void refreshAutoCompleteOptions()
+    {
+        List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<>();
+        autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
+        autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
+        autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
+    }
 
-	public String getSql(boolean all)
-	{
-		if (all)
-			return codeEditor.getText();
+    public void setSql(String sql)
+    {
+        codeEditor.setText(sql);
+    }
 
-		String selectedText = codeEditor.getSelectedText();
-		selectedText = selectedText == null ? TextEditorUtils.getCurrentTextBlock(codeEditor) : selectedText;
-		return selectedText == null || selectedText.trim().isEmpty() ? codeEditor.getText() : selectedText;
-	}
+    public void appendSql(String sql)
+    {
+        String text = codeEditor.getText();
+        codeEditor.setText(text + "\n" + sql);
+    }
 
-	/**
-	 * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The content of this method is always regenerated by the Form Editor.
-	 */
-	@SuppressWarnings("unchecked")
+    public String getSql(boolean all)
+    {
+        if (all)
+        {
+            return codeEditor.getText();
+        }
+
+        String selectedText = codeEditor.getSelectedText();
+        selectedText = selectedText == null ? TextEditorUtils.getCurrentTextBlock(codeEditor) : selectedText;
+        return selectedText == null || selectedText.trim().isEmpty() ? codeEditor.getText() : selectedText;
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents()
     {
@@ -190,7 +209,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
     private void txtSearchFieldActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_txtSearchFieldActionPerformed
     {//GEN-HEADEREND:event_txtSearchFieldActionPerformed
-		btnNext.doClick(0);
+        btnNext.doClick(0);
     }//GEN-LAST:event_txtSearchFieldActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -203,55 +222,61 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     private javax.swing.JTextField txtSearchField;
     // End of variables declaration//GEN-END:variables
 
-	@Override
-	public void EventOccurred(Event event, Object value)
-	{
-		if (event.equals(Event.DB_INFO_UPDATED))
-		{
-			DbInfo dbInfo = (DbInfo) value;
-			if (this.dbInfo.equals(dbInfo))
-				refreshAutoCompleteOptions();
-		}
-	}
+    @Override
+    public void EventOccurred(Event event, Object value)
+    {
+        if (event.equals(Event.DB_INFO_UPDATED))
+        {
+            DbInfo dbInfo = (DbInfo) value;
+            if (this.dbInfo.equals(dbInfo))
+            {
+                refreshAutoCompleteOptions();
+            }
+        }
+    }
 
-	String getCurrentWord()
-	{
-		return TextEditorUtils.getCurrentWord(codeEditor, Lists.newArrayList('\t', '\n', ' '));
-	}
+    String getCurrentWord()
+    {
+        return TextEditorUtils.getCurrentWord(codeEditor, Lists.newArrayList('\t', '\n', ' '));
+    }
 
-	@Override
-	public void actionPerformed(ActionEvent e)
-	{
-		// "FindNext" => search forward, "FindPrev" => search backward
-		String command = e.getActionCommand();
-		boolean forward = "FindNext".equals(command);
+    @Override
+    public void actionPerformed(ActionEvent e)
+    {
+        // "FindNext" => search forward, "FindPrev" => search backward
+        String command = e.getActionCommand();
+        boolean forward = "FindNext".equals(command);
 
-		// Create an object defining our search parameters.
-		SearchContext context = new SearchContext();
-		String text = txtSearchField.getText();
-		if (text.length() == 0)
-			return;
+        // Create an object defining our search parameters.
+        SearchContext context = new SearchContext();
+        String text = txtSearchField.getText();
+        if (text.length() == 0)
+        {
+            return;
+        }
 
-		context.setSearchFor(text);
-		context.setMatchCase(btnMatchCase.isSelected());
-		context.setRegularExpression(btnRegex.isSelected());
-		context.setSearchForward(forward);
-		context.setWholeWord(false);
+        context.setSearchFor(text);
+        context.setMatchCase(btnMatchCase.isSelected());
+        context.setRegularExpression(btnRegex.isSelected());
+        context.setSearchForward(forward);
+        context.setWholeWord(false);
 
-		boolean found = SearchEngine.find(codeEditor, context);
-		if (!found)
-			JOptionPane.showMessageDialog(this, "Text not found");
+        boolean found = SearchEngine.find(codeEditor, context);
+        if (!found)
+        {
+            JOptionPane.showMessageDialog(this, "Text not found");
+        }
 
-	}
+    }
 
-	private class WordHighlighter implements CaretListener
-	{
+    private class WordHighlighter implements CaretListener
+    {
 
-		@Override
-		public void caretUpdate(CaretEvent ce)
-		{
-			String currentWord = getCurrentWord();
-			TextEditorUtils.highlightWord(codeEditor, currentWord);
-		}
-	}
+        @Override
+        public void caretUpdate(CaretEvent ce)
+        {
+            String currentWord = getCurrentWord();
+            TextEditorUtils.highlightWord(codeEditor, currentWord);
+        }
+    }
 }
