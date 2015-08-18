@@ -161,7 +161,7 @@ public class TextEditorUtils
 
 	public static void highlightWord(JTextComponent textComponent, String word)
 	{
-		removeHighlights(textComponent);
+ 		removeHighlights(textComponent);
 		if (word == null || word.trim().length() == 0)
 			return;
 		try

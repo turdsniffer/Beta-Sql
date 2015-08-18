@@ -25,7 +25,6 @@ package com.swingautocompletion.main;
  * THE SOFTWARE.
  * #L%
  */
-
 import com.swingautocompletion.util.Pair;
 import com.swingautocompletion.util.TextEditorUtils;
 import com.google.common.collect.Lists;
@@ -60,15 +59,15 @@ import javax.swing.text.JTextComponent;
  * @author parmstrong
  */
 public class AutoCompletePopup extends JWindow
-{	
+{
 	private JList list;
 	private PopupListModel model;
 	private List<AutoCompleteItem> items = new ArrayList<AutoCompleteItem>();
-	private Map<String,AutoCompleteItem> autoCompleteIdToItemMap;
+	private Map<String, AutoCompleteItem> autoCompleteIdToItemMap;
 	private Set<AutoCompleteItem> subSuggestions;
-	private JTextComponent textComponent;	
+	private JTextComponent textComponent;
 	private List<AutoCompleteHandler> autoCompleteHandlers;
-	private SearchStrategy searchStrategy;	
+	private SearchStrategy searchStrategy;
 	private SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider;
 	private SearchTermProvider searchTermProvider;
 	private PropertiesWindow propertiesWindow;
@@ -80,7 +79,7 @@ public class AutoCompletePopup extends JWindow
 	}
 
 	public AutoCompletePopup(JTextComponent textComponent, PopupListCellRenderer popupListCellRenderer, SubSuggestionsWordSearchProvider subSuggestionsWordSearchProvider, SearchTermProvider searchTermProvider)
-	{		
+	{
 		this.propertiesWindow = new PropertiesWindow(this);
 		this.subSuggestionsWordSearchProvider = subSuggestionsWordSearchProvider;
 		this.autoCompleteIdToItemMap = new HashMap<String, AutoCompleteItem>();
@@ -100,22 +99,23 @@ public class AutoCompletePopup extends JWindow
 		list.setCellRenderer(popupListCellRenderer);
 		JScrollPane jScrollPane = new JScrollPane(list);
 		list.setBackground(Color.LIGHT_GRAY);
-		list.addListSelectionListener(new ListSelectionListener() {
+		list.addListSelectionListener(new ListSelectionListener()
+		{
 			@Override
 			public void valueChanged(ListSelectionEvent lse)
 			{
-				if(!lse.getValueIsAdjusting())
+				if (!lse.getValueIsAdjusting())
 				{
-					int selectedIndex = list.getSelectedIndex();										
-					if(selectedIndex < 0)
+					int selectedIndex = list.getSelectedIndex();
+					if (selectedIndex < 0)
 						return;
 					AutoCompleteItem item = model.getItem(selectedIndex);
-					if(item != null)
-						propertiesWindow.showProperties(item);					
+					if (item != null)
+						propertiesWindow.showProperties(item);
 				}
 			}
 		});
-		
+
 		this.setPreferredSize(dimension);
 		this.add(jScrollPane);
 		this.doLayout();
@@ -126,25 +126,13 @@ public class AutoCompletePopup extends JWindow
 	{
 		KeyAdapter keyAdapter = new KeyAdapter()
 		{
-			@Override
+
 			public void keyPressed(KeyEvent e)
 			{
 				if (e.isConsumed()) return;
-				
-				if (Character.isLetterOrDigit(e.getKeyChar()) || e.getKeyCode() == KeyEvent.VK_PERIOD || (e.getKeyCode() == KeyEvent.VK_SPACE && (e.isControlDown() || e.isShiftDown())))
-				{						
-					if(e.isShiftDown() && e.isControlDown())
-						searchStrategy = new LinearContainsSearch();
-					else
-						searchStrategy = new LinearSearch();
-				
-					
-					addSubSuggestions();
-					updateAutoComplete();
-					e.consume();
-				}
-				
 
+				if (e.getKeyCode() == KeyEvent.VK_SPACE && (e.isControlDown() || e.isShiftDown()))
+					initiateUpdate(e);
 				if (AutoCompletePopup.this.isVisible())
 				{
 					if (e.getKeyCode() == KeyEvent.VK_ENTER)
@@ -164,7 +152,7 @@ public class AutoCompletePopup extends JWindow
 					}
 					else if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
 					{
-						AutoCompletePopup.this.setVisible(false);						
+						AutoCompletePopup.this.setVisible(false);
 						e.consume();
 					}
 				}
@@ -173,39 +161,48 @@ public class AutoCompletePopup extends JWindow
 			@Override
 			public void keyReleased(KeyEvent e)
 			{
-				if (AutoCompletePopup.this.isVisible())
-				{
-					if (e.getKeyCode() >= KeyEvent.VK_A && e.getKeyCode() <= KeyEvent.VK_Z)
-					{
-						updateAutoComplete();
-						e.consume();
-					}
-				}
+				if (e.isConsumed()) return;
+
+				if (Character.isLetterOrDigit(e.getKeyChar()) || e.getKeyCode() == KeyEvent.VK_PERIOD)
+					initiateUpdate(e);
+			}
+
+			private void initiateUpdate(KeyEvent e)
+			{
+				if (e.isShiftDown() && e.isControlDown())
+					searchStrategy = new LinearContainsSearch();
+				else
+					searchStrategy = new LinearSearch();
+
+				addSubSuggestions();
+				updateAutoComplete();
+				e.consume();
+
 			}
 		};
 
-		FocusListener focusListener = new FocusAdapter() 
+		FocusListener focusListener = new FocusAdapter()
 		{
 			@Override
-			public void focusLost(FocusEvent e) 
+			public void focusLost(FocusEvent e)
 			{
 				AutoCompletePopup.this.setVisible(false);
-			}			
+			}
 		};
-		
+
 		textComponent.addKeyListener(keyAdapter);
 		textComponent.addFocusListener(focusListener);
 	}
-	
+
 	private void addSubSuggestions()
 	{
 		subSuggestions.clear();
-		List<AutoCompleteItem> itemsToMatch = subSuggestionsWordSearchProvider.getItemsToSearchForSubSuggestions(textComponent);	
-		
+		List<AutoCompleteItem> itemsToMatch = subSuggestionsWordSearchProvider.getItemsToSearchForSubSuggestions(textComponent);
+
 		for (AutoCompleteItem autoCompleteItem : itemsToMatch)
 		{
 			AutoCompleteItem match = autoCompleteIdToItemMap.get(autoCompleteItem.getAutoCompleteId().toLowerCase());
-			if(match != null)
+			if (match != null)
 				subSuggestions.addAll(match.getSubSuggestions());
 		}
 	}
@@ -236,12 +233,12 @@ public class AutoCompletePopup extends JWindow
 	private void updatePosition()
 	{
 		try
-		{				
-			Rectangle rect = textComponent.modelToView(textComponent.getCaretPosition());			
+		{
+			Rectangle rect = textComponent.modelToView(textComponent.getCaretPosition());
 			Point location = textComponent.getLocationOnScreen();
 			location.x += rect.x;
 			location.y += rect.y + 15;
-			this.setLocation(location);			
+			this.setLocation(location);
 		}
 		catch (BadLocationException ex)
 		{
@@ -256,7 +253,7 @@ public class AutoCompletePopup extends JWindow
 		model.removeAllElements();
 		List<AutoCompleteItem> foundMatches = searchStrategy.search(wordPart, new ArrayList<AutoCompleteItem>(subSuggestions));
 		foundMatches.addAll(searchStrategy.search(wordPart, items));
-		
+
 		model.addAll(foundMatches);
 		list.setSelectedIndex(0);
 		if (!model.isEmpty())
@@ -267,19 +264,19 @@ public class AutoCompletePopup extends JWindow
 
 	private void insertSelectedItem()
 	{
-		AutoCompleteItem item = (AutoCompleteItem)list.getSelectedValue();
+		AutoCompleteItem item = (AutoCompleteItem) list.getSelectedValue();
 		ArrayList wordSeparators = Lists.newArrayList(TextEditorUtils.DEFAULT_WORD_SEPARATORS);
-		if(item.getAutoCompletion().contains("."))//This is a bit of a hack for auto completions that have a . in them.  This is not a robust solution for this.
+		if (item.getAutoCompletion().contains("."))//This is a bit of a hack for auto completions that have a . in them.  This is not a robust solution for this.
 			wordSeparators.remove(Character.valueOf('.'));
 
 		Pair<Integer, Integer> replacementWordBounds = TextEditorUtils.getWordBounds(textComponent, wordSeparators, TextEditorUtils.ExpansionDirection.LEFT);
 
 		String autoCompletion = item.getAutoCompletion();
-		
+
 		textComponent.setSelectionStart(replacementWordBounds.getFirst());
 		textComponent.setSelectionEnd(replacementWordBounds.getSecond());
-		textComponent.replaceSelection(autoCompletion);	
-		
+		textComponent.replaceSelection(autoCompletion);
+
 		notifyAutoCompleteHandlers(item);
 		this.setVisible(false);
 	}
@@ -300,16 +297,17 @@ public class AutoCompletePopup extends JWindow
 		int newIndex = Math.min(model.getSize() - 1, current + 1);
 		list.setSelectionInterval(newIndex, newIndex);
 		list.scrollRectToVisible(list.getCellBounds(newIndex, newIndex));
-	}	
+	}
+
 	public void addAutoCompleteHandler(AutoCompleteHandler handler)
 	{
 		autoCompleteHandlers.add(handler);
 	}
-	
+
 	private void notifyAutoCompleteHandlers(AutoCompleteItem autoCompleteItem)
 	{
 		for (AutoCompleteHandler autoCompleteHandler : autoCompleteHandlers)
-			autoCompleteHandler.handle(autoCompleteItem);	
+			autoCompleteHandler.handle(autoCompleteItem);
 	}
-	
+
 }
