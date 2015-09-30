@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
 import javax.swing.table.AbstractTableModel;
 
@@ -14,17 +13,19 @@ import javax.swing.table.AbstractTableModel;
  */
 public class ResultsTableModel extends AbstractTableModel
 {
-	private List<String> columnNames;
-	private ArrayList<Object[]> data;
-	private List<Class> columnClasses;
+	private List<String> columnNames = new ArrayList<>();
+	private ArrayList<Object[]> data= new ArrayList<>();
+	private List<Class> columnClasses= new ArrayList<>();
 
 
-	public ResultsTableModel(List<String> columnNames, List<Class> columnClasses, ArrayList<Object[]> data)
+	
+	public void setData(List<String> columnNames, List<Class> columnClasses, ArrayList<Object[]> data)
 	{
 		this.columnNames = columnNames;
 		this.columnClasses = columnClasses;
 		this.data = data;
 		addRowCountColumn();
+		this.fireTableStructureChanged();
 	}
 
 	private void addRowCountColumn()

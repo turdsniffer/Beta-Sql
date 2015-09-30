@@ -44,20 +44,17 @@ import javax.swing.tree.TreeSelectionModel;
 @Singleton
 public class ConnectionsPanel extends javax.swing.JPanel implements EventListener
 {	
-	
-	private DefaultMutableTreeNode root;
+        private DefaultMutableTreeNode root;
 	private DefaultTreeModel treeModel;
-	private EventManager eventManager;
-	private Multimap<DbObjectType, JMenuItem> contextMenuButtonMap = HashMultimap.create();
-	private List<JMenuItem> defaultContextButtons;
+	private final EventManager eventManager;
+	private final Multimap<DbObjectType, JMenuItem> contextMenuButtonMap = HashMultimap.create();
+	private final List<JMenuItem> defaultContextButtons;
 	
 	@Inject FindObjectDialog findObjectDialog;
 	@Inject ConnectDialog connectDialog;
 	@Inject TablePrivileges tablePrivileges;
 	@Inject private DataSourceManager dataSourceManager;
 	
-	
-
 	/**
 	 * Creates new form ConnectionsPanel
 	 */

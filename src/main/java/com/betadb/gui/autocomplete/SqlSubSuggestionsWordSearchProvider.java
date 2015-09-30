@@ -32,9 +32,9 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	{
 		Pair<Integer, Integer> currentWordBounds;
 		if(isCurrentTermAnAlias(textComponent))
-			currentWordBounds = getWordBounds(textComponent, ALIAS_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(ALIAS_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(textComponent.getCaretPosition()));
 		else
-			currentWordBounds = getWordBounds(textComponent, WORD_SEPARATORS, TextEditorUtils.ExpansionDirection.LEFT);
+			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(WORD_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(textComponent.getCaretPosition()));
 		return getCurrentWord(currentWordBounds, textComponent);
 	}
 
@@ -50,7 +50,7 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 	@Override
 	public List<AutoCompleteItem> getItemsToSearchForSubSuggestions(JTextComponent textComponent)
 	{
-		String currentWord = getCurrentWord(textComponent, WORD_SEPARATORS);
+		String currentWord = getCurrentWord(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(WORD_SEPARATORS));
 		if (currentWord.endsWith(".") && currentWord.length() > 1)
 			return getItemsForAlias(textComponent, currentWord);
 		return getItemsDefault(textComponent);
@@ -83,7 +83,7 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 
 	private boolean isCurrentTermAnAlias(JTextComponent textComponent)
 	{
-		String currentWord = getCurrentWord(textComponent, WORD_SEPARATORS);
+		String currentWord = getCurrentWord(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(WORD_SEPARATORS));
 		if(!currentWord.contains("."))
 			return false;
 		String alias = currentWord.substring(0, currentWord.indexOf("."));

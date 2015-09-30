@@ -14,37 +14,26 @@ import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.datasource.DataSourceManager;
 import static com.betadb.gui.datasource.SQLUtils.close;
 import com.betadb.gui.dbobjects.DbInfo;
-import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnClasses;
-import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnNames;
-import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -61,8 +50,12 @@ public class ResultsPanel extends javax.swing.JPanel
 	private MessagePanel messagePanel;
 	private Timer timer;
 	private QueryExecutor queryExecutor;
-	@Inject ResultTablePopup resultTablePopup;
-	@Inject DataSourceManager dataSourceManager;
+	@Inject
+	ResultTablePopup resultTablePopup;
+	@Inject
+	DataSourceManager dataSourceManager;
+	@Inject
+	Provider<ResultSetPanel> resultSetPanelProvider;
 
 	/**
 	 * Creates new form ResultsPanel
@@ -97,7 +90,7 @@ public class ResultsPanel extends javax.swing.JPanel
 		conn = ds.getConnection();
 		conn.setCatalog(dbInfo.getDbName());
 	}
-	
+
 	public void executeSql(String sql)
 	{
 		executeSql(sql, null);
@@ -129,74 +122,6 @@ public class ResultsPanel extends javax.swing.JPanel
 		timer.start();
 	}
 
-	private Component getResultsTable(ResultSet rs) throws SQLException
-	{
-		List<String> columnNames = getColumnNames(rs);
-		List<Class> columnClasses = getColumnClasses(rs);
-
-		ArrayList<Object[]> data = getData(rs, columnNames);
-
-		ResultsTableModel resultsTableModel = new ResultsTableModel(columnNames, columnClasses, data);
-		JTable table = createConfiguredResultsTable(resultsTableModel);
-
-		JPanel resultsPanel = new JPanel();
-		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.PAGE_AXIS));
-		JLabel label = new JLabel("Rows: " + data.size());
-		JScrollPane jScrollPane = new JScrollPane(table);
-		resultsPanel.add(label);
-		resultsPanel.add(jScrollPane);
-		label.setAlignmentX(Component.LEFT_ALIGNMENT);
-		jScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		jScrollPane.setPreferredSize(new Dimension(100, 125));
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
-		return resultsPanel;
-	}
-
-	private JTable createConfiguredResultsTable(ResultsTableModel resultsTableModel)
-	{
-		final JTable table = new JTable(resultsTableModel);
-		table.setTransferHandler(new ResultsTableTransferHandler());
-		table.setAutoCreateRowSorter(true);
-		table.setCellSelectionEnabled(true);
-		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		RowNumberColumnMouseListener rowNumberColumnMouseListener = new RowNumberColumnMouseListener();
-		table.addMouseListener(rowNumberColumnMouseListener);
-		table.addMouseMotionListener(rowNumberColumnMouseListener);
-
-		table.setComponentPopupMenu(resultTablePopup);
-		formatColumns(table, new ResultsPanelTableCellRenderer());
-		table.getColumnModel().getColumn(0).setPreferredWidth(40);
-		final ListSelectionModel selectionModel = table.getColumnModel().getSelectionModel();
-		table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener()
-		{
-			@Override
-			public void valueChanged(ListSelectionEvent event)
-			{
-				if (selectionModel.isSelectedIndex(table.convertColumnIndexToView(0)))
-					selectionModel.removeSelectionInterval(table.convertColumnIndexToView(0), table.convertColumnIndexToView(0));
-			}
-		});
-		return table;
-	}
-
-	private ArrayList<Object[]> getData(ResultSet rs, List<String> columnNames) throws SQLException
-	{
-		ArrayList<Object[]> data = new ArrayList<>();
-		Object[] row;
-
-		while (rs.next())
-		{
-			row = new Object[columnNames.size()];
-			for (int i = 1; i <= row.length; i++)
-				row[i - 1] = rs.getObject(i);
-
-			data.add(row);
-		}
-		return data;
-	}
-
 	public void cancelQuery()
 	{
 		messagePanel.addMessage("Attempting to cancel query");
@@ -218,10 +143,10 @@ public class ResultsPanel extends javax.swing.JPanel
 	 */
 	@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         jSplitPane1 = new javax.swing.JSplitPane();
-        scrlResults = new javax.swing.JScrollPane();
         pnlResults = new javax.swing.JPanel();
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.PAGE_AXIS));
@@ -229,20 +154,15 @@ public class ResultsPanel extends javax.swing.JPanel
         jSplitPane1.setDividerLocation(475);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
-        scrlResults.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-
         pnlResults.setAlignmentX(0.0F);
         pnlResults.setLayout(new javax.swing.BoxLayout(pnlResults, javax.swing.BoxLayout.PAGE_AXIS));
-        scrlResults.setViewportView(pnlResults);
-
-        jSplitPane1.setTopComponent(scrlResults);
+        jSplitPane1.setLeftComponent(pnlResults);
 
         add(jSplitPane1);
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JPanel pnlResults;
-    private javax.swing.JScrollPane scrlResults;
     // End of variables declaration//GEN-END:variables
 
 	private class QueryExecutor extends SwingWorker<List<Component>, List<Component>>
@@ -257,10 +177,11 @@ public class ResultsPanel extends javax.swing.JPanel
 		@Override
 		protected List<Component> doInBackground() throws Exception
 		{
-			List<Component> results = new ArrayList<>();
+			List<Component> resultTables = new ArrayList<>();
+
 			ResultSet rs = null;
 			String message = "Query Finished Successfully";
-			
+
 			try
 			{
 				stmt = conn.createStatement();
@@ -272,22 +193,28 @@ public class ResultsPanel extends javax.swing.JPanel
 					do
 					{
 						rs = stmt.getResultSet();
+
+						if (stmt.getWarnings() != null)
+							for (Throwable warning : stmt.getWarnings())
+								message += "\n" + warning.getMessage();
+
 						if (rs == null)
 							continue;
-
-						results.add(getResultsTable(rs));
+						ResultSetPanel resultSetPanel = resultSetPanelProvider.get();
+						resultSetPanel.setData(rs);
+						resultTables.add(resultSetPanel);
 
 					}
 					while (!((stmt.getMoreResults() == false) && (stmt.getUpdateCount() == -1)));
 					close(rs);
 				}
 			}
-			catch(SQLException e)
+			catch (SQLException e)
 			{
-				if(e.getMessage().contains("Connection reset"))
+				if (e.getMessage().contains("Connection reset"))
 				{
 					message = "Connection reset, try rerunning query";
-					resetConnection();					
+					resetConnection();
 				}
 				else
 				{
@@ -306,7 +233,11 @@ public class ResultsPanel extends javax.swing.JPanel
 
 			messagePanel.addMessage(message);
 
-			return results;
+			JTabbedPane jTabbedPane = new JTabbedPane();
+			for (int i = 0; i < resultTables.size(); i++)
+				jTabbedPane.addTab("rs" + i, resultTables.get(i));
+
+			return Collections.singletonList(jTabbedPane);
 
 		}
 

@@ -20,10 +20,10 @@ import javax.swing.text.View;
  *
  * @author parmstrong
  */
-public class BoxHighlighter extends DefaultHighlighter.DefaultHighlightPainter
+public class UnderlineHighlighter extends DefaultHighlighter.DefaultHighlightPainter
 {
 
-    public BoxHighlighter(Color c)
+    public UnderlineHighlighter(Color c)
     {
         super(c);
     }
@@ -137,11 +137,11 @@ public class BoxHighlighter extends DefaultHighlighter.DefaultHighlightPainter
 
         if (r != null)
         {
-                // If we are asked to highlight, we should draw something even
+            // If we are asked to highlight, we should draw something even
             // if the model-to-view projection is of zero width (6340106).
             r.width = Math.max(r.width, 1);
 
-            g.drawRect(r.x, r.y, r.width-1, r.height -1);
+            g.drawLine(r.x, r.y+r.height -1, r.x+r.width-1, r.y+r.height -1);
         }
 
         return r;

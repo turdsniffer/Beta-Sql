@@ -151,5 +151,10 @@
             <artifactId>spring-jdbc</artifactId>
             <version>4.1.3.RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>com.jidesoft</groupId>
+            <artifactId>jide-oss</artifactId>
+            <version>3.5.15</version>
+        </dependency>
     </dependencies>
 </project>

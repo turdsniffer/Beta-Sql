@@ -16,19 +16,34 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
+import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.util.BoxHighlighter;
 import com.betadb.gui.util.TemplateEditor;
+import com.betadb.gui.util.UnderlineHighlighter;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.swingautocompletion.util.Pair;
 import com.swingautocompletion.util.TextEditorUtils;
+import java.awt.Color;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
+import javax.swing.text.BadLocationException;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.SearchContext;
@@ -46,6 +61,10 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     private DbInfo dbInfo;
     boolean isTemplateEditing = false;
     private final TemplateEditor templateEditor;
+    private final EventManager EventManager;
+    private Map<String, DbObject> autoCompleteToDbObjectMap = Maps.newHashMap();
+    private UnderlineHighlighter navigationHightlight = new UnderlineHighlighter(Color.blue);
+    private Object navigationHighlight;
 
     /**
      * Creates new form EditorPanel
@@ -56,7 +75,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     public EditorPanel(EventManager eventManager)
     {
         eventManager.addEventListener(this);
-
+        this.EventManager = eventManager;
         initComponents();
 
         codeEditor = new RSyntaxTextArea();
@@ -90,7 +109,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         autoCompletePopup.addAutoCompleteHandler((AutoCompleteItem autoCompleteItem) ->
         {
             int startPosition = codeEditor.getCaretPosition() - autoCompleteItem.getAutoCompletion().length();
-                templateEditor.initiateTemplateEditing(startPosition, autoCompleteItem.getAutoCompletion().length());
+            templateEditor.initiateTemplateEditing(startPosition, autoCompleteItem.getAutoCompletion().length());
         });
 
         JScrollPane scrPane = new JScrollPane(codeEditor);
@@ -99,9 +118,53 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
         codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
         codeEditor.addCaretListener(new WordHighlighter());//Highlight occurances of current word.
-    }
+        codeEditor.addMouseMotionListener(new MouseMotionAdapter()
+        {
+            public void mouseMoved(MouseEvent e)
+            {      
+                if(navigationHighlight != null)
+                {
+                    codeEditor.getHighlighter().removeHighlight(navigationHighlight);
+                    navigationHighlight = null;
+                }
+                
+                if(e.isControlDown())
+                {
+                    int characterPosition = codeEditor.viewToModel(e.getPoint());
+                    Pair<Integer, Integer> wordBounds = TextEditorUtils.getWordBounds(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
+                    String word = TextEditorUtils.getCurrentWord(wordBounds, codeEditor);
+                    DbObject dbObject = autoCompleteToDbObjectMap.get(word);
+                    if(dbObject != null)
+                    {
+                        try
+                        {
+                            navigationHighlight = codeEditor.getHighlighter().addHighlight(wordBounds.getFirst(), wordBounds.getSecond(), navigationHightlight);                            
+                        }
+                        catch (BadLocationException ex)
+                        {
+                            Logger.getLogger(EditorPanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        });
+        codeEditor.addMouseListener(new MouseAdapter()
+        {
+            public void mouseClicked(MouseEvent e) 
+            {               
+                if(e.isControlDown())
+                {
+                    int characterPosition = codeEditor.viewToModel(e.getPoint());
+                    String word = TextEditorUtils.getWord(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
+                    DbObject dbObject = autoCompleteToDbObjectMap.get(word);
+                    EventManager.fireEvent(Event.DB_OBJECT_SELECTED, dbObject);
+                }
+            }
+        });
 
+    }
     
+
 
     public void setDbConnectInfo(DbConnection connectionInfo)
     {
@@ -116,6 +179,14 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
         autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
         autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
+
+        for (DbObject dbObject : dbInfo.getAllDbObjects())
+        {
+            autoCompleteToDbObjectMap.put(dbObject.getAutoCompleteId(), dbObject);
+            for (String alternateAutoComplete : dbObject.alternateAutoCompeteIds())
+                autoCompleteToDbObjectMap.put(alternateAutoComplete, dbObject);
+        }
+
     }
 
     public void setSql(String sql)
@@ -237,7 +308,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
     String getCurrentWord()
     {
-        return TextEditorUtils.getCurrentWord(codeEditor, Lists.newArrayList('\t', '\n', ' '));
+        return TextEditorUtils.getCurrentWord(codeEditor, new TextEditorUtils.WordBoundsConfig().withWordSeparators(Lists.newArrayList('\t', '\n', ' ')));
     }
 
     @Override
@@ -269,9 +340,16 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
     }
 
+    void linkItemAtCaretToObjectTree()
+    {
+        String sql = this.getCurrentWord();
+        List<DbObject> matchingDbObjects = dbInfo.getAllDbObjects().stream().filter(o -> o.getAutoCompleteId().equalsIgnoreCase(sql) || o.alternateAutoCompeteIds().contains(sql)).collect(Collectors.toList());
+        if (matchingDbObjects.size() == 1)
+            EventManager.fireEvent(Event.DB_OBJECT_SELECTED, matchingDbObjects.get(0));
+    }
+
     private class WordHighlighter implements CaretListener
     {
-
         @Override
         public void caretUpdate(CaretEvent ce)
         {

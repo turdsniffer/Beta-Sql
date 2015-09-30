@@ -268,6 +268,7 @@ public class SqlPanel extends javax.swing.JPanel
         jToolBar1.add(btnOpenFile);
 
         synchObjectsPane.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/synch.png"))); // NOI18N
+        synchObjectsPane.setToolTipText("Find Object In Object Tree");
         synchObjectsPane.setFocusable(false);
         synchObjectsPane.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         synchObjectsPane.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -373,8 +374,7 @@ public class SqlPanel extends javax.swing.JPanel
 
     private void synchObjectsPaneActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_synchObjectsPaneActionPerformed
     {//GEN-HEADEREND:event_synchObjectsPaneActionPerformed
-        String sql = editorPanel.getCurrentWord();
-
+         editorPanel.linkItemAtCaretToObjectTree();
     }//GEN-LAST:event_synchObjectsPaneActionPerformed
 
     private void btnAnalyzeQueryActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAnalyzeQueryActionPerformed
