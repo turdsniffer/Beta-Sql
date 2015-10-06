@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.betadb.gui.sql;
 
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnClasses;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getColumnNames;
 import com.betadb.gui.sql.filter.ColumnFilterDialog;
+import com.betadb.gui.sql.filter.RowFilterData;
 import static com.betadb.gui.table.util.renderer.RendererUtils.formatColumns;
 import com.google.inject.Inject;
 import java.awt.event.MouseAdapter;
@@ -18,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -33,7 +30,8 @@ public class ResultSetPanel extends javax.swing.JPanel
 {
 	private ResultsTableModel resultsTableModel;
 	final TableRowSorter<TableModel> sorter;
-	ColumnFilterDialog columnFilterDialog;
+	private ColumnFilterDialog columnFilterDialog;
+	private int lastRightClickedColumn;
 	
 	
 	/**
@@ -61,7 +59,10 @@ public class ResultSetPanel extends javax.swing.JPanel
 			public void mouseClicked(MouseEvent me)
 			{				
 				if (SwingUtilities.isRightMouseButton(me))
+				{
+					lastRightClickedColumn = tblResults.columnAtPoint(me.getPoint());
 					headerPopup.show(tableHeader, me.getX(), me.getY());
+				}
 			}
 		});
 
@@ -165,12 +166,26 @@ public class ResultSetPanel extends javax.swing.JPanel
         btnFilterToolBar.setFocusable(false);
         btnFilterToolBar.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnFilterToolBar.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        btnFilterToolBar.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnFilterToolBarActionPerformed(evt);
+            }
+        });
         jToolBar1.add(btnFilterToolBar);
 
         btnClearFiltersToolBar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/betadb/gui/icons/draw_eraser.png"))); // NOI18N
         btnClearFiltersToolBar.setFocusable(false);
         btnClearFiltersToolBar.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         btnClearFiltersToolBar.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        btnClearFiltersToolBar.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnClearFiltersToolBarActionPerformed(evt);
+            }
+        });
         jToolBar1.add(btnClearFiltersToolBar);
         jToolBar1.add(filler1);
 
@@ -199,6 +214,7 @@ public class ResultSetPanel extends javax.swing.JPanel
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tblResults.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
         tblResults.setCellSelectionEnabled(true);
         jScrollPane1.setViewportView(tblResults);
 
@@ -217,13 +233,23 @@ public class ResultSetPanel extends javax.swing.JPanel
 
     private void btnFilterActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnFilterActionPerformed
     {//GEN-HEADEREND:event_btnFilterActionPerformed
-        columnFilterDialog.initiate();
+		columnFilterDialog.initiate(new RowFilterData(lastRightClickedColumn, RowFilter.ComparisonType.EQUAL, ""));
     }//GEN-LAST:event_btnFilterActionPerformed
 
     private void btnRemoveFiltersActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRemoveFiltersActionPerformed
     {//GEN-HEADEREND:event_btnRemoveFiltersActionPerformed
         columnFilterDialog.clearFilters();
     }//GEN-LAST:event_btnRemoveFiltersActionPerformed
+
+    private void btnClearFiltersToolBarActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnClearFiltersToolBarActionPerformed
+    {//GEN-HEADEREND:event_btnClearFiltersToolBarActionPerformed
+        columnFilterDialog.clearFilters();
+    }//GEN-LAST:event_btnClearFiltersToolBarActionPerformed
+
+    private void btnFilterToolBarActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnFilterToolBarActionPerformed
+    {//GEN-HEADEREND:event_btnFilterToolBarActionPerformed
+        columnFilterDialog.initiate(null);
+    }//GEN-LAST:event_btnFilterToolBarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

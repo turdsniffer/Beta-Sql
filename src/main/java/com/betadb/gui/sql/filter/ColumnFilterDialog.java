@@ -29,17 +29,23 @@ public class ColumnFilterDialog extends javax.swing.JDialog
 	public ColumnFilterDialog(JTable jTable)
 	{
 		initComponents();
+		setLocationRelativeTo(null);
 		this.jTable = jTable;
 	}
 
-	public void initiate()
+	public void initiate(RowFilterData filterData)
 	{		
 		pnlFilters.removeAll();
 
 		Collection<RowFilterData> tableFilters = filters.get(jTable);
 		for (RowFilterData tableFilter : tableFilters)
 			pnlFilters.add(new ColumnFilterPanel(jTable, tableFilter));
-		pnlFilters.add(new ColumnFilterPanel(jTable));
+		
+		if(filterData == null)
+			pnlFilters.add(new ColumnFilterPanel(jTable));
+		else
+			pnlFilters.add(new ColumnFilterPanel(jTable, filterData));
+		
 
 		this.pack();
 		this.setVisible(true);
@@ -50,6 +56,9 @@ public class ColumnFilterDialog extends javax.swing.JDialog
 		filters.removeAll(jTable);
 		applyFilters();		
 	}	
+	
+
+	
 		
 	/**
 	 * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The
@@ -67,6 +76,7 @@ public class ColumnFilterDialog extends javax.swing.JDialog
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Filter");
+        setAlwaysOnTop(true);
 
         btnApply.setText("Apply");
         btnApply.addActionListener(new java.awt.event.ActionListener()
