@@ -53,7 +53,7 @@ public class ResultTablePopup extends JPopupMenu
 		});
 		this.add(btnCopyIn);
 		
-			JMenuItem btnInsert = new JMenuItem("Create SQL Insert Statement");
+		JMenuItem btnInsert = new JMenuItem("Create SQL Insert Statement");
 		btnInsert.addActionListener(new ActionListener()
 		{
 			@Override
@@ -86,6 +86,36 @@ public class ResultTablePopup extends JPopupMenu
 			}
 		});
 		this.add(btnInsert);
+		
+		JMenuItem btnWhere = new JMenuItem("Create SQL AND statement");
+		btnWhere.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent ae)
+			{
+				JTable table = (JTable) getInvoker();
+				int rowIndexStart = table.getSelectedRow();
+				int rowIndexEnd = table.getSelectionModel().getMaxSelectionIndex();
+				int colIndexStart = table.getSelectedColumn();
+				int colIndexEnd = table.getColumnModel().getSelectionModel().getMaxSelectionIndex();
+				
+				StringBuilder selectedText = new StringBuilder();
+				for (int r = rowIndexStart; r <= rowIndexEnd; r++)
+				{
+					for (int c = colIndexStart; c <= colIndexEnd; c++)
+						if (table.isCellSelected(r, c))
+							selectedText.append(table.getColumnName(table.convertColumnIndexToModel(c))+"="+getQueryRepresentation(table.getModel().getValueAt(table.convertRowIndexToModel(r), table.convertColumnIndexToModel(c)))+" and ");
+					
+					selectedText.delete(selectedText.length()-4, selectedText.length());
+					selectedText.append("\n");
+				}
+
+				StringSelection ss = new StringSelection(selectedText.toString());
+				getDefaultToolkit().getSystemClipboard().setContents(ss, null);
+			}
+		});
+		this.add(btnWhere);
+		
 
 		JMenuItem btnTearOut = new JMenuItem("Show in new window");
 		btnTearOut.addActionListener(new ActionListener()

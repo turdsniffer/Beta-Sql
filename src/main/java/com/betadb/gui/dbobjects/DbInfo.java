@@ -2,6 +2,7 @@ package com.betadb.gui.dbobjects;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author parmstrong
@@ -108,5 +109,30 @@ public class DbInfo
 	{
 		this.defaultSchema = defaultSchema;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		int hash = 3;
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final DbInfo other = (DbInfo) obj;
+		if (!Objects.equals(this.dbName, other.dbName))
+			return false;
+		return true;
+	}
+
+
+	
 	
 }

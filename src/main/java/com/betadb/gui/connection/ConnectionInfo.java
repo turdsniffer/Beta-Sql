@@ -4,26 +4,33 @@
  */
 package com.betadb.gui.connection;
 
+import com.betadb.gui.datasource.DatabaseType;
+import java.util.Objects;
+
 /**
  *
  * @author Phil
  */
 public class ConnectionInfo
 {
+	private final String serverName;
+	private final String userName;
+	private final String password;
+	private final String domain;
+	private final String instanceName;
+	private final String port;
+	private final DatabaseType databaseType;
+	
 
-	private String serverName;
-	private String userName;
-	private String domain;
-	private String instanceName;
-	private String port;
-
-	public ConnectionInfo(String serverName, String userName, String domain, String instanceName, String port)
+	public ConnectionInfo(String serverName, String userName, String password, String domain, String instanceName, String port, DatabaseType databaseType)
 	{
 		this.serverName = serverName;
 		this.userName = userName;
 		this.domain = domain;
 		this.instanceName = instanceName;
 		this.port = port;
+		this.password = password;
+		this.databaseType = databaseType;
 	}
 
 	public String getServerName()
@@ -52,6 +59,17 @@ public class ConnectionInfo
 	}
 
 	@Override
+	public int hashCode()
+	{
+		int hash = 3;
+		hash = 41 * hash + Objects.hashCode(this.serverName);
+		hash = 41 * hash + Objects.hashCode(this.userName);
+		hash = 41 * hash + Objects.hashCode(this.instanceName);
+		hash = 41 * hash + Objects.hashCode(this.databaseType);
+		return hash;
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (obj == null)
@@ -59,27 +77,40 @@ public class ConnectionInfo
 		if (getClass() != obj.getClass())
 			return false;
 		final ConnectionInfo other = (ConnectionInfo) obj;
-		if ((this.serverName == null) ? (other.serverName != null) : !this.serverName.equals(other.serverName))
+		if (!Objects.equals(this.serverName, other.serverName))
 			return false;
-		if ((this.domain == null) ? (other.domain != null) : !this.domain.equals(other.domain))
+		if (!Objects.equals(this.userName, other.userName))
 			return false;
-		if ((this.instanceName == null) ? (other.instanceName != null) : !this.instanceName.equals(other.instanceName))
+		if (!Objects.equals(this.instanceName, other.instanceName))
+			return false;
+		if (this.databaseType != other.databaseType)
 			return false;
 		return true;
 	}
 
-	@Override
-	public int hashCode()
-	{
-		int hash = 7;
-		return hash;
-	}
+
 
 	@Override
 	public String toString()
 	{
 		String instanceNameSuffix = instanceName == null || instanceName.isEmpty() ? "" : "\\"+instanceName;
 		return serverName + instanceNameSuffix;
+	}
+
+	/**
+	 * @return the password
+	 */
+	public String getPassword()
+	{
+		return password;
+	}
+
+	/**
+	 * @return the databaseType
+	 */
+	public DatabaseType getDatabaseType()
+	{
+		return databaseType;
 	}
 
 }

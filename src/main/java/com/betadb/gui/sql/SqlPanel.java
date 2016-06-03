@@ -6,7 +6,11 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
+import com.betadb.gui.dao.DbInfoDAO;
+import com.betadb.gui.datasource.DataSourceManager;
+import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.queryanalyzer.SqlServerQueryAnalyzer;
+import com.betadb.gui.util.IconListCellRenderer;
 import com.google.inject.Inject;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -21,7 +25,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import static java.lang.Integer.parseInt;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
+import javax.sql.DataSource;
 import static javax.swing.JOptionPane.showInputDialog;
 import javax.swing.JScrollPane;
 import static javax.swing.KeyStroke.getKeyStroke;
@@ -33,121 +41,146 @@ import static javax.swing.KeyStroke.getKeyStroke;
 public class SqlPanel extends javax.swing.JPanel
 {
 
-    private final EditorPanel editorPanel;
-    private final ResultsPanel resultsPanel;
-    private final JFileChooser fileChooser;
-    private final JSplitPane splitPane;
-    private final SqlServerQueryAnalyzer queryAnalyzer;
-    private String filePath;
+	private final EditorPanel editorPanel;
+	private final ResultsPanel resultsPanel;
+	private final JFileChooser fileChooser;
+	private final JSplitPane splitPane;
+	private final SqlServerQueryAnalyzer queryAnalyzer;
+	private String filePath;
+	private DbInfoDAO dbInfoDAO;
+	private DbConnection dbConnectionInfo;
+	private DataSource ds;
+	private Logger logger = Logger.getLogger(SqlPanel.class.getName());
+	
+	@Inject
+	DataSourceManager dataSourceManager;
 
-    @Inject
-    public SqlPanel(ResultsPanel resultsPanel, EditorPanel editorPanel, SqlServerQueryAnalyzer queryAnalyzer)
-    {
-        initComponents();
-        fileChooser = new JFileChooser();
-        this.resultsPanel = resultsPanel;
-        this.editorPanel = editorPanel;
-        this.queryAnalyzer = queryAnalyzer;
-        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
-        splitPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnlMain.add(splitPane);
-        this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("F5"), "execute");
-        this.getActionMap().put("execute", new AbstractAction()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                executeSql(false);
-            }
-        });
+	@Inject
+	public SqlPanel(ResultsPanel resultsPanel, EditorPanel editorPanel, SqlServerQueryAnalyzer queryAnalyzer)
+	{
+		initComponents();
+		fileChooser = new JFileChooser();
+		this.resultsPanel = resultsPanel;
+		this.editorPanel = editorPanel;
+		this.queryAnalyzer = queryAnalyzer;
+		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorPanel, resultsPanel);
+		splitPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+		pnlMain.add(splitPane);
+		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("F5"), "execute");
+		this.getActionMap().put("execute", new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent ae)
+			{
+				executeSql(false);
+			}
+		});
 
-        this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("control S"), "PRESS");
-        this.getActionMap().put("PRESS", new AbstractAction()
-        {
-            @Override
-            public void actionPerformed(ActionEvent ae)
-            {
-                save(false);
-            }
-        });
-    }
+		this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(getKeyStroke("control S"), "PRESS");
+		this.getActionMap().put("PRESS", new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent ae)
+			{
+				save(false);
+			}
+		});
+	}
 
-    public void setDbConnectInfo(DbConnection connectionInfo)
-    {
-        resultsPanel.setDbConnectInfo(connectionInfo);
-        editorPanel.setDbConnectInfo(connectionInfo);
-        queryAnalyzer.setDbInfo(connectionInfo);
-    }
+	public void setDbConnectInfo(DbConnection connectionInfo)
+	{
+		this.ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
+		this.dbInfoDAO = new DbInfoDAO(ds);
+		setDatabases(connectionInfo);
+		this.dbConnectionInfo = connectionInfo;
+		this.resultsPanel.setDbConnectInfo(connectionInfo);
+		this.editorPanel.setDbConnectInfo(connectionInfo);
+		this.queryAnalyzer.setDbInfo(connectionInfo);
+	}
+	
+	private void setDatabases(DbConnection connectionInfo)
+	{
+		try
+		{			
+			List<DbInfo> databases = dbInfoDAO.getDatabases();
+			for (int i = 0; i < databases.size(); i++)
+				cbDatabases.insertItemAt(databases.get(i), i);				
+			cbDatabases.setSelectedItem(connectionInfo.getDbInfo());				
+		}
+		catch (SQLException ex)
+		{
+			logger.log(Level.SEVERE, "Error getting Databases", ex);			
+		}
+	}
 
-    private void executeSql(boolean executeAll)
-    {
-        executeSql(executeAll, null);
-    }
+	private void executeSql(boolean executeAll)
+	{
+		executeSql(executeAll, null);
+	}
 
-    private void executeSql(boolean executeAll, Integer repeatInterval)
-    {
-        String sql = editorPanel.getSql(executeAll);
-        if (btnAnalyzeQuery.isSelected())
-        {
-            JScrollPane jScrollPane = new JScrollPane(queryAnalyzer);
-            splitPane.setBottomComponent(jScrollPane);
-            queryAnalyzer.analyze(sql);
-        }
-        else
-        {
-            resultsPanel.executeSql(sql, repeatInterval);
-            splitPane.setBottomComponent(resultsPanel);
-        }
-    }
+	private void executeSql(boolean executeAll, Integer repeatInterval)
+	{
+		String sql = editorPanel.getSql(executeAll);
+		if (btnAnalyzeQuery.isSelected())
+		{
+			JScrollPane jScrollPane = new JScrollPane(queryAnalyzer);
+			splitPane.setBottomComponent(jScrollPane);
+			queryAnalyzer.analyze(sql);
+		}
+		else
+		{
+			resultsPanel.executeSql(sql, repeatInterval);
+			splitPane.setBottomComponent(resultsPanel);
+		}
+	}
 
-    private void save(boolean saveAs)
-    {
-        String sql = editorPanel.getSql(true);
-        File file = null;
-        if (filePath == null || saveAs)
-        {
-            int response = fileChooser.showSaveDialog(this);
-            if (response == JFileChooser.APPROVE_OPTION)
-            {
-                file = fileChooser.getSelectedFile();
-                filePath = file.getPath();
-            }
-            else if (response == JFileChooser.CANCEL_OPTION)
-                return;
-        }
-        else
-            file = new File(filePath);
+	private void save(boolean saveAs)
+	{
+		String sql = editorPanel.getSql(true);
+		File file = null;
+		if (filePath == null || saveAs)
+		{
+			int response = fileChooser.showSaveDialog(this);
+			if (response == JFileChooser.APPROVE_OPTION)
+			{
+				file = fileChooser.getSelectedFile();
+				filePath = file.getPath();
+			}
+			else if (response == JFileChooser.CANCEL_OPTION)
+				return;
+		}
+		else
+			file = new File(filePath);
 
-        FileWriter fw = null;
-        try
-        {
+		FileWriter fw = null;
+		try
+		{
 
-            fw = new FileWriter(file);
-            fw.write(sql);
-        }
-        catch (IOException ex)
-        {
-            getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally
-        {
-            try
-            {
-                fw.close();
-            }
-            catch (IOException ex)
-            {
-                getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
+			fw = new FileWriter(file);
+			fw.write(sql);
+		}
+		catch (IOException ex)
+		{
+			getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		finally
+		{
+			try
+			{
+				fw.close();
+			}
+			catch (IOException ex)
+			{
+				getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+			}
+		}
+	}
 
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
+	/**
+	 * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The
+	 * content of this method is always regenerated by the Form Editor.
+	 */
+	@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents()
     {
@@ -162,10 +195,12 @@ public class SqlPanel extends javax.swing.JPanel
         btnOpenFile = new javax.swing.JButton();
         synchObjectsPane = new javax.swing.JButton();
         btnAnalyzeQuery = new javax.swing.JToggleButton();
+        cbDatabases = new javax.swing.JComboBox();
         pnlMain = new javax.swing.JPanel();
 
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.PAGE_AXIS));
 
+        jToolBar1.setFloatable(false);
         jToolBar1.setRollover(true);
         jToolBar1.setAlignmentX(0.0F);
 
@@ -294,6 +329,17 @@ public class SqlPanel extends javax.swing.JPanel
         });
         jToolBar1.add(btnAnalyzeQuery);
 
+        cbDatabases.setMaximumSize(new java.awt.Dimension(32767, 28));
+        cbDatabases.setRenderer(new IconListCellRenderer());
+        cbDatabases.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                cbDatabasesActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(cbDatabases);
+
         add(jToolBar1);
 
         pnlMain.setLayout(new javax.swing.BoxLayout(pnlMain, javax.swing.BoxLayout.PAGE_AXIS));
@@ -302,85 +348,91 @@ public class SqlPanel extends javax.swing.JPanel
 
 	private void btnExecuteActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnExecuteActionPerformed
 	{//GEN-HEADEREND:event_btnExecuteActionPerformed
-            executeSql(false);
+		executeSql(false);
 	}//GEN-LAST:event_btnExecuteActionPerformed
 
 	private void btnCancelQueryActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnCancelQueryActionPerformed
 	{//GEN-HEADEREND:event_btnCancelQueryActionPerformed
-            resultsPanel.cancelQuery();
+		resultsPanel.cancelQuery();
 	}//GEN-LAST:event_btnCancelQueryActionPerformed
 
 	private void btnExecuteAllActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnExecuteAllActionPerformed
 	{//GEN-HEADEREND:event_btnExecuteAllActionPerformed
-            executeSql(true);
+		executeSql(true);
 	}//GEN-LAST:event_btnExecuteAllActionPerformed
 
 	private void btnOpenFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnOpenFileActionPerformed
 	{//GEN-HEADEREND:event_btnOpenFileActionPerformed
-            int returnVal = fileChooser.showOpenDialog(this);
-            if (returnVal == JFileChooser.APPROVE_OPTION)
-            {
-                FileReader reader = null;
-                try
-                {
-                    File file = fileChooser.getSelectedFile();
-                    filePath = file.getPath();
-                    BufferedReader buf = new BufferedReader(new FileReader(file));
-                    StringBuilder builder = new StringBuilder();
-                    String curLine = buf.readLine();
-                    while (curLine != null)
-                    {
-                        builder.append(curLine);
-                        builder.append("\n");
-                        curLine = buf.readLine();
-                    }
-                    editorPanel.appendSql(builder.toString());
-                }
-                catch (Exception ex)
-                {
-                    getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                finally
-                {
-                    try
-                    {
-                        reader.close();
-                    }
-                    catch (IOException ex)
-                    {
-                        getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
+		int returnVal = fileChooser.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION)
+		{
+			FileReader reader = null;
+			try
+			{
+				File file = fileChooser.getSelectedFile();
+				filePath = file.getPath();
+				BufferedReader buf = new BufferedReader(new FileReader(file));
+				StringBuilder builder = new StringBuilder();
+				String curLine = buf.readLine();
+				while (curLine != null)
+				{
+					builder.append(curLine);
+					builder.append("\n");
+					curLine = buf.readLine();
+				}
+				editorPanel.appendSql(builder.toString());
+			}
+			catch (Exception ex)
+			{
+				getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+			}
+			finally
+			{
+				try
+				{
+					reader.close();
+				}
+				catch (IOException ex)
+				{
+					getLogger(SqlPanel.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}
+		}
 	}//GEN-LAST:event_btnOpenFileActionPerformed
 
 	private void btnSaveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnSaveActionPerformed
 	{//GEN-HEADEREND:event_btnSaveActionPerformed
-            save(false);
+		save(false);
 
 	}//GEN-LAST:event_btnSaveActionPerformed
 
 	private void btnSaveAsActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnSaveAsActionPerformed
 	{//GEN-HEADEREND:event_btnSaveAsActionPerformed
-            save(true);
+		save(true);
 	}//GEN-LAST:event_btnSaveAsActionPerformed
 
     private void btnRepeatExecutionActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRepeatExecutionActionPerformed
     {//GEN-HEADEREND:event_btnRepeatExecutionActionPerformed
-        String inputValue = showInputDialog(btnRepeatExecution, "Seconds between repeats: ", 5);
-        int repeatInterval = parseInt(inputValue);
-        executeSql(false, repeatInterval);
+		String inputValue = showInputDialog(btnRepeatExecution, "Seconds between repeats: ", 5);
+		int repeatInterval = parseInt(inputValue);
+		executeSql(false, repeatInterval);
     }//GEN-LAST:event_btnRepeatExecutionActionPerformed
 
     private void synchObjectsPaneActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_synchObjectsPaneActionPerformed
     {//GEN-HEADEREND:event_synchObjectsPaneActionPerformed
-         editorPanel.linkItemAtCaretToObjectTree();
+		editorPanel.linkItemAtCaretToObjectTree();
     }//GEN-LAST:event_synchObjectsPaneActionPerformed
 
     private void btnAnalyzeQueryActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAnalyzeQueryActionPerformed
     {//GEN-HEADEREND:event_btnAnalyzeQueryActionPerformed
 
     }//GEN-LAST:event_btnAnalyzeQueryActionPerformed
+
+    private void cbDatabasesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_cbDatabasesActionPerformed
+    {//GEN-HEADEREND:event_cbDatabasesActionPerformed
+		
+		resultsPanel.executeSql("use "+((DbInfo)cbDatabases.getSelectedItem()).getDbName());
+    }//GEN-LAST:event_cbDatabasesActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToggleButton btnAnalyzeQuery;
@@ -391,6 +443,7 @@ public class SqlPanel extends javax.swing.JPanel
     private javax.swing.JButton btnRepeatExecution;
     private javax.swing.JButton btnSave;
     private javax.swing.JButton btnSaveAs;
+    private javax.swing.JComboBox cbDatabases;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JPanel pnlMain;
     private javax.swing.JButton synchObjectsPane;
