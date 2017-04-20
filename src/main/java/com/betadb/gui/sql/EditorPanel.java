@@ -16,8 +16,8 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
+import com.betadb.gui.autocomplete.SqlTemplateDialog;
 import com.betadb.gui.dbobjects.DbObject;
-import com.betadb.gui.util.BoxHighlighter;
 import com.betadb.gui.util.TemplateEditor;
 import com.betadb.gui.util.UnderlineHighlighter;
 import com.google.common.collect.Maps;
@@ -25,7 +25,6 @@ import com.google.inject.Inject;
 import com.swingautocompletion.util.Pair;
 import com.swingautocompletion.util.TextEditorUtils;
 import java.awt.Color;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -65,6 +64,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     private Map<String, DbObject> autoCompleteToDbObjectMap = Maps.newHashMap();
     private UnderlineHighlighter navigationHightlight = new UnderlineHighlighter(Color.blue);
     private Object navigationHighlight;
+    private SqlTemplateDialog sqlTemplateDialog;
 
     /**
      * Creates new form EditorPanel
@@ -72,10 +72,11 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
      * @param connectionInfo
      */
     @Inject
-    public EditorPanel(EventManager eventManager)
+    public EditorPanel(EventManager eventManager, SqlTemplateDialog sqlTemplateDialog)
     {
         eventManager.addEventListener(this);
         this.EventManager = eventManager;
+		this.sqlTemplateDialog = sqlTemplateDialog;
         initComponents();
 
         codeEditor = new RSyntaxTextArea();
@@ -91,16 +92,13 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 }
                 if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_F)
                 {
-                    searchBar.setVisible(!searchBar.isVisible());
-                    if (searchBar.isVisible())
-                    {
-                        txtSearchField.requestFocus();
-                    }
+                    searchBar.setVisible(true);     
+                    txtSearchField.requestFocus();
+					txtSearchField.selectAll();
                 }
             }
         };
-
-        codeEditor.addKeyListener(keyAdapter);
+		codeEditor.addKeyListener(keyAdapter);
         templateEditor = new TemplateEditor(codeEditor);
         txtSearchField.addKeyListener(keyAdapter);
         searchBar.setVisible(false);
@@ -161,6 +159,8 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 }
             }
         });
+		
+		codeEditor.setPopupMenu(jPopupMenu1);
 
     }
     
@@ -176,9 +176,11 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     private void refreshAutoCompleteOptions()
     {
         List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<>();
-        autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
         autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
-        autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
+        autoCompletePossibilities.addAll(sqlTemplateDialog.getSavedTemplatesAsAutoCompleteItems());
+        autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
+		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
+		
 
         for (DbObject dbObject : dbInfo.getAllDbObjects())
         {
@@ -222,6 +224,8 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     private void initComponents()
     {
 
+        jPopupMenu1 = new javax.swing.JPopupMenu();
+        btnEditTemplate = new javax.swing.JMenuItem();
         searchBar = new javax.swing.JToolBar();
         jLabel1 = new javax.swing.JLabel();
         txtSearchField = new javax.swing.JTextField();
@@ -229,6 +233,16 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         btnPrev = new javax.swing.JButton();
         btnMatchCase = new javax.swing.JToggleButton();
         btnRegex = new javax.swing.JToggleButton();
+
+        btnEditTemplate.setText("Create/Edit Template");
+        btnEditTemplate.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnEditTemplateActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(btnEditTemplate);
 
         setPreferredSize(new java.awt.Dimension(0, 300));
         setLayout(new java.awt.BorderLayout());
@@ -238,6 +252,8 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         jLabel1.setText("Find:");
         searchBar.add(jLabel1);
 
+        txtSearchField.setMinimumSize(new java.awt.Dimension(200, 19));
+        txtSearchField.setPreferredSize(new java.awt.Dimension(200, 19));
         txtSearchField.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -283,12 +299,20 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         btnNext.doClick(0);
     }//GEN-LAST:event_txtSearchFieldActionPerformed
 
+    private void btnEditTemplateActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnEditTemplateActionPerformed
+    {//GEN-HEADEREND:event_btnEditTemplateActionPerformed
+		String selectedText = codeEditor.getSelectedText();
+		sqlTemplateDialog.createAsTemplate(selectedText);
+    }//GEN-LAST:event_btnEditTemplateActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem btnEditTemplate;
     private javax.swing.JToggleButton btnMatchCase;
     private javax.swing.JButton btnNext;
     private javax.swing.JButton btnPrev;
     private javax.swing.JToggleButton btnRegex;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JToolBar searchBar;
     private javax.swing.JTextField txtSearchField;
     // End of variables declaration//GEN-END:variables

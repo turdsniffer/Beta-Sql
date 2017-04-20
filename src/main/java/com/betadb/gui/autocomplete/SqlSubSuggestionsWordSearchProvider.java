@@ -28,13 +28,13 @@ public class SqlSubSuggestionsWordSearchProvider extends SubSuggestionsWordSearc
 
 
 	@Override
-	public String getSearchTerm(JTextComponent textComponent)
+	public String getSearchTerm(JTextComponent textComponent, Integer caretPosition)
 	{
 		Pair<Integer, Integer> currentWordBounds;
 		if(isCurrentTermAnAlias(textComponent))
-			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(ALIAS_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(textComponent.getCaretPosition()));
+			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(ALIAS_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(caretPosition));
 		else
-			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(WORD_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(textComponent.getCaretPosition()));
+			currentWordBounds = getWordBounds(textComponent, new TextEditorUtils.WordBoundsConfig().withWordSeparators(WORD_SEPARATORS).withExpansionDirection(TextEditorUtils.ExpansionDirection.LEFT).withStartingPosition(caretPosition));
 		return getCurrentWord(currentWordBounds, textComponent);
 	}
 

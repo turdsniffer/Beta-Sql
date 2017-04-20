@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.table.TableModel;
 
 /**
  * @author parmstrong
@@ -52,7 +53,7 @@ public class ResultTablePopup extends JPopupMenu
 			}
 		});
 		this.add(btnCopyIn);
-		
+
 		JMenuItem btnInsert = new JMenuItem("Create SQL Insert Statement");
 		btnInsert.addActionListener(new ActionListener()
 		{
@@ -64,8 +65,8 @@ public class ResultTablePopup extends JPopupMenu
 				int rowIndexEnd = table.getSelectionModel().getMaxSelectionIndex();
 				int colIndexStart = table.getSelectedColumn();
 				int colIndexEnd = table.getColumnModel().getSelectionModel().getMaxSelectionIndex();
-				ResultsTableModel resultsTableModel = (ResultsTableModel)table.getModel();
-				
+				ResultsTableModel resultsTableModel = (ResultsTableModel) table.getModel();
+
 				StringBuilder selectedText = new StringBuilder();
 				for (int r = rowIndexStart; r <= rowIndexEnd; r++)
 				{
@@ -73,7 +74,7 @@ public class ResultTablePopup extends JPopupMenu
 					for (int c = colIndexStart; c <= colIndexEnd; c++)
 					{
 						if (table.isCellSelected(r, c))
-						{							
+						{
 							selectedText.append(getQueryRepresentation(table.getModel().getValueAt(table.convertRowIndexToModel(r), table.convertColumnIndexToModel(c))) + ",");
 						}
 					}
@@ -86,7 +87,7 @@ public class ResultTablePopup extends JPopupMenu
 			}
 		});
 		this.add(btnInsert);
-		
+
 		JMenuItem btnWhere = new JMenuItem("Create SQL AND statement");
 		btnWhere.addActionListener(new ActionListener()
 		{
@@ -98,15 +99,15 @@ public class ResultTablePopup extends JPopupMenu
 				int rowIndexEnd = table.getSelectionModel().getMaxSelectionIndex();
 				int colIndexStart = table.getSelectedColumn();
 				int colIndexEnd = table.getColumnModel().getSelectionModel().getMaxSelectionIndex();
-				
+
 				StringBuilder selectedText = new StringBuilder();
 				for (int r = rowIndexStart; r <= rowIndexEnd; r++)
 				{
 					for (int c = colIndexStart; c <= colIndexEnd; c++)
 						if (table.isCellSelected(r, c))
-							selectedText.append(table.getColumnName(table.convertColumnIndexToModel(c))+"="+getQueryRepresentation(table.getModel().getValueAt(table.convertRowIndexToModel(r), table.convertColumnIndexToModel(c)))+" and ");
-					
-					selectedText.delete(selectedText.length()-4, selectedText.length());
+							selectedText.append(table.getColumnName(table.convertColumnIndexToModel(c)) + "=" + getQueryRepresentation(table.getModel().getValueAt(table.convertRowIndexToModel(r), table.convertColumnIndexToModel(c))) + " and ");
+
+					selectedText.delete(selectedText.length() - 4, selectedText.length());
 					selectedText.append("\n");
 				}
 
@@ -115,7 +116,43 @@ public class ResultTablePopup extends JPopupMenu
 			}
 		});
 		this.add(btnWhere);
-		
+
+		JMenuItem btnHeadersCopy = new JMenuItem("Copy with headers");
+		btnHeadersCopy.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent ae)
+			{
+				JTable table = (JTable) getInvoker();
+
+				int[] rows = table.getSelectedRows();
+				int[] cols = table.getSelectedColumns();
+				String columnSeparator = cols.length > 1 ? "\t":"";
+				StringBuilder selectedText = new StringBuilder();
+
+				TableModel model = table.getModel();
+				for (int i : cols)
+					selectedText.append(model.getColumnName(table.convertColumnIndexToModel(i)) + columnSeparator);
+				selectedText.append("\n");
+
+				for (int row = 0; row < rows.length; row++)
+				{
+					for (int col = 0; col < cols.length; col++)
+					{
+						Object obj = table.getValueAt(rows[row], cols[col]);
+						String val = ((obj == null) ? "" : obj.toString());
+
+						selectedText.append(val + columnSeparator);
+					}
+					// we want a newline at the end of each line and not a tab			
+					selectedText.append("\n");
+				}
+
+				StringSelection ss = new StringSelection(selectedText.toString());
+				getDefaultToolkit().getSystemClipboard().setContents(ss, null);
+			}
+		});
+		this.add(btnHeadersCopy);
 
 		JMenuItem btnTearOut = new JMenuItem("Show in new window");
 		btnTearOut.addActionListener(new ActionListener()
@@ -146,9 +183,6 @@ public class ResultTablePopup extends JPopupMenu
 		});
 		this.add(btnViewer);
 
-
-	
-
 	}
 
 	private static String getQueryRepresentation(Object obj)
@@ -157,11 +191,11 @@ public class ResultTablePopup extends JPopupMenu
 			return "'" + obj.toString() + "'";
 		if (obj instanceof Boolean)
 			return ((Boolean) obj) ? "1" : "0";
-		if(obj instanceof Date)
-			return "'"+obj.toString()+"'";
-		if(obj == null)
+		if (obj instanceof Date)
+			return "'" + obj.toString() + "'";
+		if (obj == null)
 			return "null";
-		
+
 		return obj.toString();
 	}
 }

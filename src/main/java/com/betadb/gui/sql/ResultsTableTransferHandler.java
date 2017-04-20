@@ -5,7 +5,6 @@ import java.awt.datatransfer.Transferable;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
-import javax.swing.table.TableModel;
 
 /**
  * @author parmstrong
@@ -32,12 +31,6 @@ public class ResultsTableTransferHandler extends TransferHandler
 
 		String columnSeparator = cols.length > 1 ? "\t":"";
 		
-		TableModel model = table.getModel();
-	
-		for (int i : cols)
-			textBuff.append(model.getColumnName(table.convertColumnIndexToModel(i)) + columnSeparator);
-		textBuff.append("\n");
-
 		for (int row = 0; row < rows.length; row++)
 		{			
 			for (int col = 0; col < cols.length; col++)

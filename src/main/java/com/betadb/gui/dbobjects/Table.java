@@ -34,7 +34,7 @@ public class Table extends DbObject
 	
 	@Override
 	public List<? extends AutoCompleteItem> getSubSuggestions()
-	{
+	{		
 		return new ArrayList<>(columns);
 	}	
 

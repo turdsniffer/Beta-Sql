@@ -59,6 +59,13 @@ public class DbObject extends AutoCompleteItem
 			return singletonList(getName());
 		return Collections.EMPTY_LIST;
 	}
+	
+	public String getAutoCompletion()
+	{
+		String autoCompletion = super.getAutoCompletion();
+		return autoCompletion.contains(" ") ? "["+autoCompletion+"]" : autoCompletion;
+	}
+	
 
 	public String getSchemaName()
 	{

@@ -257,7 +257,9 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 	private void btnAddDataSourceActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAddDataSourceActionPerformed
 	{//GEN-HEADEREND:event_btnAddDataSourceActionPerformed
+		connectDialog.setLocationRelativeTo(btnConnect);
 		connectDialog.setVisible(true);
+		
 	}//GEN-LAST:event_btnAddDataSourceActionPerformed
 
 	private void btnConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnConnectActionPerformed

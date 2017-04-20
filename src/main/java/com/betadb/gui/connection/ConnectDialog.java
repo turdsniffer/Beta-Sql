@@ -349,6 +349,7 @@ public class ConnectDialog extends javax.swing.JDialog
 			populateServersCombo();
 		}
 		
+		
 		super.setVisible(visible);
 	}
 	
