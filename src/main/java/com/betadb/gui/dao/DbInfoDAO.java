@@ -100,7 +100,7 @@ public class DbInfoDAO
 			try
 			{
 				conn = ds.getConnection();
-				DatabaseMetaData metaData = conn.getMetaData();
+				DatabaseMetaData metaData = conn.getMetaData();       
 				ListMultimap<DbObjectKey, Parameter> procedureParameters = getProcedureParameters(metaData, dbInfo.getDbName());
 				List<Procedure> procedures = getProcedures(metaData, dbInfo.getDbName(), procedureParameters);
 				dbInfo.setProcedures(procedures);
@@ -188,6 +188,27 @@ public class DbInfoDAO
 		}
 		return retVal;
 	}
+    
+//    private ListMultimap<DbObjectKey, Column> getColumns(Table table, String catalog) throws SQLException
+//	{
+//		ListMultimap<DbObjectKey, Column> retVal = create();
+//
+//		ResultSet rs = databaseMetaData.getColumns(catalog, table.getSchemaName(), table.getName(), null);
+//		while (rs.next())
+//		{
+//			Column c = new Column();
+//			c.setObjectType(DbObjectType.COLUMN);
+//			c.setName(rs.getString("COLUMN_NAME"));
+//			c.setSchemaName(rs.getString("TABLE_SCHEM"));
+//			c.setDecimalDigits(rs.getInt("COLUMN_SIZE"));
+//			c.setDataType(rs.getString("TYPE_NAME"));
+//			c.setProperties(getRowAsProperties(rs));
+//			retVal.put(new DbObjectKey(catalog, rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME")), c);
+//		}
+//		return retVal;
+//	}
+    
+
 
 	private List<Procedure> getProcedures(DatabaseMetaData databaseMetaData, String dbName, ListMultimap<DbObjectKey, Parameter> parameterMap) throws SQLException
 	{

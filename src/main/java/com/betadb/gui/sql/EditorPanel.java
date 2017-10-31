@@ -16,7 +16,6 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
-import com.betadb.gui.autocomplete.SqlTemplateDialog;
 import com.betadb.gui.dbobjects.DbObject;
 import com.betadb.gui.util.TemplateEditor;
 import com.betadb.gui.util.UnderlineHighlighter;
@@ -47,6 +46,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.SearchContext;
 import org.fife.ui.rtextarea.SearchEngine;
+import sqltemplate.SqlTemplateDialog;
 
 /**
  *
