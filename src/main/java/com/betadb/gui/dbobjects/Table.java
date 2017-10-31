@@ -1,7 +1,6 @@
 package com.betadb.gui.dbobjects;
 
-
-
+import com.betadb.gui.dao.DbInfoDAO;
 import com.swingautocompletion.main.AutoCompleteItem;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,66 +10,56 @@ import java.util.List;
  */
 public class Table extends DbObject
 {
-	private List<Column> columns;
-	private List<Index> indexes;
-	private List<ForeignKey> foreignKeys;
-	private List<PrimaryKey> primaryKeys;
+    private DbInfoDAO dbInfoDAO;
+    private List<Column> columns;
+    private List<Index> indexes;
+    private List<ForeignKey> foreignKeys;
+    private List<PrimaryKey> primaryKeys;
 
+    public Table(DbInfoDAO dbInfoDAO)
+    {
+        this.dbInfoDAO = dbInfoDAO;
+    }
 
-	public Table()
-	{
-		columns = new ArrayList<>();
-	}
+    public List<Column> getColumns()
+    {
+        if (columns == null)
+            this.columns = dbInfoDAO.getColumns(this);
+        return columns;
+    }
 
-	public List<Column> getColumns()
-	{
-		return columns;
-	}
+    @Override
+    public List<? extends AutoCompleteItem> getSubSuggestions()
+    {
+        return new ArrayList<>(getColumns());
+    }
 
-	public void setColumns(List<Column> columns)
-	{
-		this.columns = columns;
-	}	
-	
-	@Override
-	public List<? extends AutoCompleteItem> getSubSuggestions()
-	{		
-		return new ArrayList<>(columns);
-	}	
+    public List<Index> getIndexes()
+    {
+        if (indexes == null)
+            this.indexes = dbInfoDAO.getIndexes(this);
+        return indexes;
+    }
 
-	public List<Index> getIndexes()
-	{
-		return indexes;
-	}
+    @Override
+    public String getAutoCompletion()
+    {
+        return getSchemaName() + "." + getName();
+    }
 
-	public void setIndexes(List<Index> indexes)
-	{
-		this.indexes = indexes;
-	}
+    public List<ForeignKey> getForeignKeys()
+    {
+        if (foreignKeys == null)
+            this.foreignKeys = dbInfoDAO.getForeignKeys(this);
 
-	@Override
-	public String getAutoCompletion()
-	{
-		return getSchemaName()+"."+getName();
-	}
+        return foreignKeys;
+    }
 
-	public List<ForeignKey> getForeignKeys()
-	{
-		return foreignKeys;
-	}
+    public List<PrimaryKey> getPrimaryKeys()
+    {
+        if (primaryKeys == null)
+            this.primaryKeys = dbInfoDAO.getPrimaryKeys(this);
+        return primaryKeys;
+    }
 
-	public void setForeignKeys(List<ForeignKey> foreignKeys)
-	{
-		this.foreignKeys = foreignKeys;
-	}
-
-	public List<PrimaryKey> getPrimaryKeys()
-	{
-		return primaryKeys;
-	}
-
-	public void setPrimaryKeys(List<PrimaryKey> primaryKeys)
-	{
-		this.primaryKeys = primaryKeys;
-	}
 }

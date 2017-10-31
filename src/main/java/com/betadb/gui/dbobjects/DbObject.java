@@ -16,6 +16,7 @@ public class DbObject extends AutoCompleteItem
 	private String name;
 	private int objectId;
 	private String schemaName;
+    private String databaseName;
 	private Map<String,String> properties = new TreeMap<>();
 	private DbObjectType objectType;
 	
@@ -112,4 +113,16 @@ public class DbObject extends AutoCompleteItem
 	{
 		this.objectType = objectType;
 	}
+    
+    
+    public void setDatabaseName(String databaseName)
+    {
+        this.databaseName = databaseName;
+    }
+
+    public String getDatabaseName()
+    {
+        return databaseName;
+    }
+    
 }

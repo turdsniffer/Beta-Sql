@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import static java.util.logging.Logger.getLogger;
 import javax.sql.DataSource;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -359,8 +357,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
     private void btnPrivilegesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrivilegesActionPerformed
     {//GEN-HEADEREND:event_btnPrivilegesActionPerformed
-		try
-		{
+
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 
 			if (!(node.getUserObject() instanceof Table))
@@ -369,14 +366,10 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 			DataSource dataSource = getDataSourceForNode(node);
 			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
 			DbInfo dbInfo = getDbInfoForNode(node);
-			List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges(dbInfo.getDbName(), table);
+			List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges( table);
 			this.tablePrivileges.show(tablePrivileges);
 
-		}
-		catch (SQLException ex)
-		{
-			getLogger(ConnectionsPanel.class.getName()).log(Level.SEVERE, null, ex);
-		}
+
     }//GEN-LAST:event_btnPrivilegesActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

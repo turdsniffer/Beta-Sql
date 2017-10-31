@@ -1,6 +1,6 @@
 package com.betadb.gui.dbobjects;
 
-import java.util.ArrayList;
+import com.betadb.gui.dao.DbInfoDAO;
 import java.util.List;
 
 /**
@@ -9,19 +9,19 @@ import java.util.List;
 public class Procedure extends DbObject
 {
 	private List<Parameter> parameters;
-
-	public Procedure()
-	{
-		this.parameters = new ArrayList<>();
+    private DbInfoDAO dbInfoDAO;
+    
+	public Procedure(DbInfoDAO dbInfoDAO)
+	{	
+        this.dbInfoDAO = dbInfoDAO;
 	}	
 	
-	public void setParameters(List<Parameter> parameters)
-	{
-		this.parameters = parameters;
-	}
+
 
 	public List<Parameter> getParameters()
 	{
+        if(parameters == null)
+            dbInfoDAO.getProcedureParameters(this);
 		return parameters;
 	}
 

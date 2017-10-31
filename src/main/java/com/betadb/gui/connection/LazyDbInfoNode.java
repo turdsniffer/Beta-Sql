@@ -1,8 +1,6 @@
-
 package com.betadb.gui.connection;
 
 import com.betadb.gui.dao.DbInfoDAO;
-import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.Function;
 import com.betadb.gui.dbobjects.Parameter;
@@ -25,134 +23,132 @@ import javax.swing.tree.TreePath;
  */
 public class LazyDbInfoNode extends LazyLoadNode
 {
-	private final DbInfo dbInfo;
-	private final JTree treeDbs;
-	private final EventManager eventManager;
+    private final DbInfo dbInfo;
+    private final JTree treeDbs;
+    private final EventManager eventManager;
 
-	public LazyDbInfoNode(DbInfo dbInfo, DataSource datasource, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
-	{
-		super(dbInfo, datasource, treeModel);
-		this.dbInfo = dbInfo;
-		this.dataSource = datasource;
-		this.treeModel = treeModel;
-		this.treeDbs = treeDbs;
-		this.eventManager = eventManager;
-		
-	}
+    public LazyDbInfoNode(DbInfo dbInfo, DataSource datasource, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
+    {
+        super(dbInfo, datasource, treeModel);
+        this.dbInfo = dbInfo;
+        this.dataSource = datasource;
+        this.treeModel = treeModel;
+        this.treeDbs = treeDbs;
+        this.eventManager = eventManager;
 
-	@Override
-	protected void performLoadAction()
-	{
-		LazyDataLoader dataLoader = new LazyDataLoader(dataSource, getDbInfo(), this);
-		dataLoader.execute();
-	}
+    }
 
-	public DbInfo getDbInfo()
-	{
-		return dbInfo;
-	}
+    @Override
+    protected void performLoadAction()
+    {
+        LazyDataLoader dataLoader = new LazyDataLoader(dataSource, getDbInfo(), this);
+        dataLoader.execute();
+    }
 
-	private class LazyDataLoader extends SwingWorker<DbInfo, Void>
-	{
-		DataSource dataSource;
-		DbInfo dbInfo;
-		DefaultMutableTreeNode dbNode;
+    public DbInfo getDbInfo()
+    {
+        return dbInfo;
+    }
 
-		public LazyDataLoader(DataSource ds, DbInfo dbInfo, DefaultMutableTreeNode dbNode)
-		{
-			this.dataSource = ds;
-			this.dbInfo = dbInfo;
-			this.dbNode = dbNode;
-		}
+    private class LazyDataLoader extends SwingWorker<DbInfo, Void>
+    {
+        DataSource dataSource;
+        DbInfo dbInfo;
+        DefaultMutableTreeNode dbNode;
 
-		@Override
-		protected DbInfo doInBackground()
-		{
-			try
-			{
-				DbInfoDAO dao = new DbInfoDAO(dataSource);
-				dao.refreshDbInfo(dbInfo);
-			}
-			catch (SQLException ex)
-			{
-				throw new BetaDbException("Error loading db info");
-			}
-			return dbInfo;
-		}
+        public LazyDataLoader(DataSource ds, DbInfo dbInfo, DefaultMutableTreeNode dbNode)
+        {
+            this.dataSource = ds;
+            this.dbInfo = dbInfo;
+            this.dbNode = dbNode;
+        }
 
-		@Override
-		public void done()
-		{
-			int childCount = treeModel.getChildCount(dbNode);
-			for (int i = childCount - 1; i >= 0; i--)
-				treeModel.removeNodeFromParent((DefaultMutableTreeNode) treeModel.getChild(dbNode, i));
+        @Override
+        protected DbInfo doInBackground()
+        {
+            try
+            {
+                DbInfoDAO dao = new DbInfoDAO(dataSource);
+                dao.refreshDbInfo(dbInfo);
+            }
+            catch (SQLException ex)
+            {
+                throw new BetaDbException("Error loading db info");
+            }
+            return dbInfo;
+        }
 
-			int i = 0;
-			addTables(i++);
-			addStoredProcs(i++);
-			addViews(i++);
-			addFunctions(i++);
-			treeDbs.expandPath(new TreePath(dbNode.getPath()));
-			eventManager.fireEvent(DB_INFO_UPDATED, dbInfo);
-			
+        @Override
+        public void done()
+        {
+            int childCount = treeModel.getChildCount(dbNode);
+            for (int i = childCount - 1; i >= 0; i--)
+                treeModel.removeNodeFromParent((DefaultMutableTreeNode) treeModel.getChild(dbNode, i));
 
-		}
+            int i = 0;
+            addTables(i++);
+            addStoredProcs(i++);
+            addViews(i++);
+            addFunctions(i++);
+            treeDbs.expandPath(new TreePath(dbNode.getPath()));
+            eventManager.fireEvent(DB_INFO_UPDATED, dbInfo);
 
-		private void addTables(int nodeIndex)
-		{
-			DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
-			for (Table table : dbInfo.getTables())
-				tables.add(getTableNode(table));
-			treeModel.insertNodeInto(tables, dbNode, nodeIndex);
-		}
+        }
 
-		private DefaultMutableTreeNode getTableNode(Table table)
-		{
-			DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
-			for (Column column : table.getColumns())
-				tableNode.add(new DefaultMutableTreeNode(column));
-			DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dataSource, dbInfo.getDbName(), table, treeModel);
-			LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
-			LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
-			tableNode.add(indexes);
-			tableNode.add(foreignKeys);
-			tableNode.add(primaryKeys);
-			return tableNode;
-		}
+        private void addTables(int nodeIndex)
+        {
+            DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
+            for (Table table : dbInfo.getTables())
+                tables.add(getTableNode(table));
+            treeModel.insertNodeInto(tables, dbNode, nodeIndex);
+        }
 
-		private void addStoredProcs(int nodeIndex)
-		{
-			DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
-			for (Procedure procedure : dbInfo.getProcedures())
-			{
-				DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
-				for (Parameter parameter : procedure.getParameters())
-					procedureNode.add(new DefaultMutableTreeNode(parameter));
-				procedures.add(procedureNode);
-			}
-			treeModel.insertNodeInto(procedures, dbNode, nodeIndex);
-		}
+        private DefaultMutableTreeNode getTableNode(Table table)
+        {
+            DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
+            LazyLoadColumnsNode columns = new LazyLoadColumnsNode(dataSource, dbInfo.getDbName(), table, treeModel);
+            DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dataSource, dbInfo.getDbName(), table, treeModel);
+            LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
+            LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
+            tableNode.add(columns);
+            tableNode.add(indexes);
+            tableNode.add(foreignKeys);
+            tableNode.add(primaryKeys);
+            return tableNode;
+        }
 
-		private void addViews(int nodeIndex)
-		{
-			DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
-			for (Table table : dbInfo.getViews())
-				views.add(getTableNode(table));
-			treeModel.insertNodeInto(views, dbNode, nodeIndex);
-		}
+        private void addStoredProcs(int nodeIndex)
+        {
+            DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
+            for (Procedure procedure : dbInfo.getProcedures())
+            {
+                DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
+                procedureNode.add(new LazyLoadParametersNode(dataSource, procedure, treeModel));
+                procedures.add(procedureNode);
+            }
+            treeModel.insertNodeInto(procedures, dbNode, nodeIndex);
+        }
 
-		private void addFunctions(int nodeIndex)
-		{
-			DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
-			for (Function function : dbInfo.getFunctions())
-			{
-				DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
-				for (Parameter parameter : function.getParameters())
-					functionsNode.add(new DefaultMutableTreeNode(parameter));
-				functions.add(functionsNode);
-			}
-			treeModel.insertNodeInto(functions, dbNode, nodeIndex);
-		}
-	}
+        private void addViews(int nodeIndex)
+        {
+            DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
+            for (Table table : dbInfo.getViews())
+                views.add(getTableNode(table));
+            treeModel.insertNodeInto(views, dbNode, nodeIndex);
+        }
+
+        private void addFunctions(int nodeIndex)
+        {
+            DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
+            for (Function function : dbInfo.getFunctions())
+            {
+                DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
+                for (Parameter parameter : function.getParameters())
+                    functionsNode.add(new DefaultMutableTreeNode(parameter));
+                functions.add(functionsNode);
+            }
+            treeModel.insertNodeInto(functions, dbNode, nodeIndex);
+        }
+    }
 
 }
