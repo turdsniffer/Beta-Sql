@@ -10,6 +10,7 @@ package com.betadb.gui.dbobjects;
  */
 public enum DbObjectType
 {
+    SCHEMA,
 	TABLE,
 	PROCEDURE,
 	VIEW,

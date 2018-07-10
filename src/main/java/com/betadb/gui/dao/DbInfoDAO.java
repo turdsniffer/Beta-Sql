@@ -9,6 +9,7 @@ import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.PrimaryKey;
 import com.betadb.gui.dbobjects.Procedure;
+import com.betadb.gui.dbobjects.Schema;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
 import com.betadb.gui.exception.BetaDbException;
@@ -42,13 +43,12 @@ import static org.apache.commons.lang3.StringUtils.join;
 public class DbInfoDAO
 {
     DataSource ds;
-    ListeningExecutorService threadPool;
 
     //add query from sys.system_objects, sys.system_columns for system views and stored procs
     public DbInfoDAO(DataSource ds)
     {
         this.ds = ds;
-        this.threadPool = listeningDecorator(newFixedThreadPool(10));
+
     }
 
     public List<DbInfo> getDatabases() throws SQLException
@@ -60,24 +60,45 @@ public class DbInfoDAO
             retVal = new ArrayList<>();
             while (rs.next())
             {
-                DbInfo dbInfo = new DbInfo(rs.getString(1));
+                DbInfo dbInfo = new DbInfo(rs.getString(1), this);
                 retVal.add(dbInfo);
             }
             rs.close();
+
         }
 
         return retVal;
     }
 
-    public DbInfo refreshDbInfo(DbInfo info) throws SQLException
+    private List<Schema> getSchemas(String dbName) throws SQLException
+    {
+        Connection conn = ds.getConnection();
+        conn.setCatalog(dbName);
+
+        List<Schema> retVal = new ArrayList<>();
+        ResultSet rs = conn.getMetaData().getSchemas();
+        while (rs.next())
+        {
+            Schema schema = new Schema(rs.getString("TABLE_SCHEM"));
+            schema.setObjectType(DbObjectType.SCHEMA);
+            schema.setDatabaseName(dbName);
+            retVal.add(schema);
+        }
+        rs.close();
+
+        return retVal;
+    }
+
+    public DbInfo loadSchemaInfo(DbInfo info, Schema schema) throws SQLException
     {
         try
         {
-            threadPool.submit(new ProcedureLoader(info));
-            threadPool.submit(new TableLoader(info));
+            ListeningExecutorService threadPool = listeningDecorator(newFixedThreadPool(2));
+            threadPool.submit(new ProcedureLoader(info, schema));
+            threadPool.submit(new TableLoader(info, schema));
             threadPool.shutdown();
             threadPool.awaitTermination(30, TimeUnit.SECONDS);
-            info.setLazyDataLoaded(true);
+            schema.setLoaded(true);
             return info;
         }
         catch (InterruptedException ex)
@@ -86,13 +107,37 @@ public class DbInfoDAO
         }
     }
 
+    public DbInfo refreshDbInfo(DbInfo info) throws SQLException
+    {
+        try
+        {
+            info.setSchemas(this.getSchemas(info.getName()));
+            
+            ListeningExecutorService threadPool = listeningDecorator(newFixedThreadPool(3));
+            Schema defaultSchema = info.getDefaultSchema();
+            threadPool.submit(new ProcedureLoader(info, defaultSchema));
+            threadPool.submit(new TableLoader(info, defaultSchema));
+            threadPool.shutdown();
+            threadPool.awaitTermination(30, TimeUnit.SECONDS);
+            return info;
+        }
+        catch (InterruptedException ex)
+        {
+            throw new BetaDbException("Error loading db objects");
+        }
+    }
+
+   
+
     private class ProcedureLoader implements Runnable
     {
         private DbInfo dbInfo;
+        private Schema schema;
 
-        public ProcedureLoader(DbInfo dbInfo)
+        public ProcedureLoader(DbInfo dbInfo, Schema schema)
         {
             this.dbInfo = dbInfo;
+            this.schema = schema;
         }
 
         @Override
@@ -103,9 +148,8 @@ public class DbInfoDAO
             {
                 conn = ds.getConnection();
                 DatabaseMetaData metaData = conn.getMetaData();
-//ListMultimap<DbObjectKey, Parameter> procedureParameters = getProcedureParameters(metaData, dbInfo.getDbName());
-                List<Procedure> procedures = getProcedures(metaData, dbInfo.getDbName());
-                dbInfo.setProcedures(procedures);
+                List<Procedure> procedures = getProcedures(metaData, dbInfo.getName(), schema.getName());
+                schema.setProcedures(procedures);
             }
             catch (SQLException ex)
             {
@@ -117,10 +161,12 @@ public class DbInfoDAO
     private class TableLoader implements Runnable
     {
         private DbInfo dbInfo;
+        private Schema schema;
 
-        public TableLoader(DbInfo dbInfo)
+        public TableLoader(DbInfo dbInfo, Schema schema)
         {
             this.dbInfo = dbInfo;
+            this.schema = schema;
         }
 
         @Override
@@ -131,10 +177,9 @@ public class DbInfoDAO
             {
                 conn = ds.getConnection();
                 DatabaseMetaData metaData = conn.getMetaData();
-//ListMultimap<DbObjectKey, Column> columns = getColumns(metaData, dbInfo.getDbName());
-                Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, dbInfo.getDbName());
-                dbInfo.setTables(tablesAndViewsPair.getFirst());
-                dbInfo.setViews(tablesAndViewsPair.getSecond());
+                Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, dbInfo.getName(), schema);
+                schema.setTables(tablesAndViewsPair.getFirst());
+                schema.setViews(tablesAndViewsPair.getSecond());
             }
             catch (SQLException ex)
             {
@@ -143,12 +188,12 @@ public class DbInfoDAO
         }
     }
 
-    private Pair<List<Table>, List<View>> getTablesAndViews(DatabaseMetaData databaseMetaData, String dbName) throws SQLException//, ListMultimap<DbObjectKey, Column> columns
+    private Pair<List<Table>, List<View>> getTablesAndViews(DatabaseMetaData databaseMetaData, String dbName, Schema schema) throws SQLException//, ListMultimap<DbObjectKey, Column> columns
     {
         List<Table> tables = new ArrayList<>();
         List<View> views = new ArrayList<>();
 
-        ResultSet rs = databaseMetaData.getTables(dbName, null, null, null);
+        ResultSet rs = databaseMetaData.getTables(dbName, schema.getName(), null, null);
 
         while (rs.next())
         {
@@ -167,7 +212,6 @@ public class DbInfoDAO
             table.setDatabaseName(dbName);
             table.setName(rs.getString("TABLE_NAME"));
             table.setProperties(getRowAsProperties(rs));
-//todo: make lazy   table.setColumns(columns.get(new DbObjectKey(dbName, table.getSchemaName(), table.getName())));
         }
 
         return new Pair<>(tables, views);
@@ -221,29 +265,11 @@ public class DbInfoDAO
         return columns;
     }
 
-//    private ListMultimap<DbObjectKey, Column> getColumns(Table table, String catalog) throws SQLException
-//	{
-//		ListMultimap<DbObjectKey, Column> retVal = create();
-//
-//		ResultSet rs = databaseMetaData.getColumns(catalog, table.getSchemaName(), table.getName(), null);
-//		while (rs.next())
-//		{
-//			Column c = new Column();
-//			c.setObjectType(DbObjectType.COLUMN);
-//			c.setName(rs.getString("COLUMN_NAME"));
-//			c.setSchemaName(rs.getString("TABLE_SCHEM"));
-//			c.setDecimalDigits(rs.getInt("COLUMN_SIZE"));
-//			c.setDataType(rs.getString("TYPE_NAME"));
-//			c.setProperties(getRowAsProperties(rs));
-//			retVal.put(new DbObjectKey(catalog, rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME")), c);
-//		}
-//		return retVal;
-//	}
-    private List<Procedure> getProcedures(DatabaseMetaData databaseMetaData, String dbName) throws SQLException//, ListMultimap<DbObjectKey, Parameter> parameterMap
+    private List<Procedure> getProcedures(DatabaseMetaData databaseMetaData, String dbName, String schemaName) throws SQLException//, ListMultimap<DbObjectKey, Parameter> parameterMap
     {
         List<Procedure> results = new ArrayList<>();
 
-        ResultSet rs = databaseMetaData.getProcedures(dbName, null, null);
+        ResultSet rs = databaseMetaData.getProcedures(dbName, schemaName, null);
         while (rs.next())
         {
             Procedure procedure = new Procedure(this);
@@ -251,8 +277,8 @@ public class DbInfoDAO
             procedure.setObjectType(DbObjectType.PROCEDURE);
             procedure.setName(cleanUpName(name));
             procedure.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
+            procedure.setDatabaseName(dbName);
             procedure.setProperties(getRowAsProperties(rs));
-//todo:make lazy   procedure.setParameters(parameterMap.get(new DbObjectKey(dbName, procedure.getSchemaName(), procedure.getName())));
             results.add(procedure);
         }
 
@@ -272,14 +298,13 @@ public class DbInfoDAO
     public List<Parameter> getProcedureParameters(Procedure procedure)
     {
         List<Parameter> params = Lists.newArrayList();
-        
+
         Connection conn;
         try
         {
             conn = ds.getConnection();
             DatabaseMetaData metaData = conn.getMetaData();
             ResultSet rs = metaData.getProcedureColumns(procedure.getDatabaseName(), procedure.getSchemaName(), procedure.getName(), null);
-
             while (rs.next())
             {
                 if (rs.getShort("COLUMN_TYPE") != 1)
@@ -289,7 +314,7 @@ public class DbInfoDAO
                 parameter.setName(rs.getString("COLUMN_NAME"));
                 parameter.setSchemaName(rs.getString("PROCEDURE_SCHEM"));
                 parameter.setProperties(getRowAsProperties(rs));
-                params.add( parameter);
+                params.add(parameter);
             }
         }
         catch (SQLException ex)
@@ -299,8 +324,6 @@ public class DbInfoDAO
 
         return params;
     }
-
-    
 
     public String getScript(DbObject dbObject, String dbName) throws SQLException
     {

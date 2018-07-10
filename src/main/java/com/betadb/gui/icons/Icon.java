@@ -8,6 +8,7 @@ import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.PrimaryKey;
 import com.betadb.gui.dbobjects.Procedure;
+import com.betadb.gui.dbobjects.Schema;
 import com.betadb.gui.dbobjects.Server;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
@@ -30,6 +31,7 @@ public enum Icon
 	INDEX("index.png", Index.class),
 	DATABASE("database.png", DbInfo.class),
 	FOREIGN_KEY("key_arrow.png", ForeignKey.class),
+	SCHEMA("folder_table.png", Schema.class),
 	PRIMARY_KEY("key.png", PrimaryKey.class);
 	
 	private static String iconBaseFilePath = "/com/betadb/gui/icons/";

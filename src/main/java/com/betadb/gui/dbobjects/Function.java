@@ -28,7 +28,7 @@ public class Function extends DbObject
 	@Override
 	public String getAutoCompletion()
 	{
-		String retVal = getSchemaName()+"."+getName();
+		String retVal = getDatabaseName() +"."+ getSchemaName()+"."+getName();
 		retVal+="(";
 		for (Parameter parameter : getParameters())
 		{

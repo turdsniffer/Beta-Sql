@@ -21,7 +21,7 @@ public class Procedure extends DbObject
 	public List<Parameter> getParameters()
 	{
         if(parameters == null)
-            dbInfoDAO.getProcedureParameters(this);
+            this.parameters = dbInfoDAO.getProcedureParameters(this);
 		return parameters;
 	}
 
@@ -30,7 +30,7 @@ public class Procedure extends DbObject
 	@Override
 	public String getAutoCompletion()
 	{
-		String retVal = getSchemaName()+"."+getName();
+		String retVal = getDatabaseName() +"."+getSchemaName()+"."+getName();
 		for (Parameter parameter : getParameters())
 		{
 			retVal+=" "+parameter.getName()+" = ?,";

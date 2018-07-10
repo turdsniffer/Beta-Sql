@@ -6,7 +6,6 @@
 package com.betadb.gui.sql;
 
 import com.betadb.gui.connection.DbConnection;
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.queryanalyzer.SqlServerQueryAnalyzer;
@@ -25,11 +24,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import static java.lang.Integer.parseInt;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.util.logging.Logger.getLogger;
-import javax.sql.DataSource;
 import static javax.swing.JOptionPane.showInputDialog;
 import javax.swing.JScrollPane;
 import static javax.swing.KeyStroke.getKeyStroke;
@@ -47,9 +44,7 @@ public class SqlPanel extends javax.swing.JPanel
 	private final JSplitPane splitPane;
 	private final SqlServerQueryAnalyzer queryAnalyzer;
 	private String filePath;
-	private DbInfoDAO dbInfoDAO;
 	private DbConnection dbConnectionInfo;
-	private DataSource ds;
 	private Logger logger = Logger.getLogger(SqlPanel.class.getName());
 	
 	@Inject
@@ -87,30 +82,23 @@ public class SqlPanel extends javax.swing.JPanel
 		});
 	}
 
-	public void setDbConnectInfo(DbConnection connectionInfo)
+	public void setDbConnectInfo(DbConnection dbConnection)
 	{
-		this.ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
-		this.dbInfoDAO = new DbInfoDAO(ds);
-		setDatabases(connectionInfo);
-		this.dbConnectionInfo = connectionInfo;
-		this.resultsPanel.setDbConnectInfo(connectionInfo);
-		this.editorPanel.setDbConnectInfo(connectionInfo);
-		this.queryAnalyzer.setDbInfo(connectionInfo);
+            List<DbInfo> databases = dbConnection.getServer().getDbs();
+            setDatabases( dbConnection.getServer().getDb(dbConnection.getSelectedDb()), databases);
+            this.resultsPanel.setDbConnectInfo(dbConnection);
+            this.editorPanel.setDbConnectInfo(dbConnection);
+            this.queryAnalyzer.setDbInfo(dbConnection);
 	}
 	
-	private void setDatabases(DbConnection connectionInfo)
+    
+
+    
+	private void setDatabases(DbInfo activeDb, List<DbInfo> databases)
 	{
-		try
-		{			
-			List<DbInfo> databases = dbInfoDAO.getDatabases();
 			for (int i = 0; i < databases.size(); i++)
 				cbDatabases.insertItemAt(databases.get(i), i);				
-			cbDatabases.setSelectedItem(connectionInfo.getDbInfo());				
-		}
-		catch (SQLException ex)
-		{
-			logger.log(Level.SEVERE, "Error getting Databases", ex);			
-		}
+			cbDatabases.setSelectedItem(activeDb);				
 	}
 
 	private void executeSql(boolean executeAll)
@@ -431,7 +419,7 @@ public class SqlPanel extends javax.swing.JPanel
     private void cbDatabasesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_cbDatabasesActionPerformed
     {//GEN-HEADEREND:event_cbDatabasesActionPerformed
 		
-		resultsPanel.executeSql("use "+((DbInfo)cbDatabases.getSelectedItem()).getDbName());
+		resultsPanel.executeSql("use "+((DbInfo)cbDatabases.getSelectedItem()).getName());
     }//GEN-LAST:event_cbDatabasesActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

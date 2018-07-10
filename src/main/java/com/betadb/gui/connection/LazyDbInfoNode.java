@@ -1,6 +1,5 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.Function;
 import com.betadb.gui.dbobjects.Parameter;
@@ -11,7 +10,6 @@ import com.betadb.gui.events.EventManager;
 
 import com.betadb.gui.exception.BetaDbException;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 import javax.swing.JTree;
 import javax.swing.SwingWorker;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -27,11 +25,10 @@ public class LazyDbInfoNode extends LazyLoadNode
     private final JTree treeDbs;
     private final EventManager eventManager;
 
-    public LazyDbInfoNode(DbInfo dbInfo, DataSource datasource, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
+    public LazyDbInfoNode(DbInfo dbInfo, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
     {
-        super(dbInfo, datasource, treeModel);
+        super(dbInfo, treeModel);
         this.dbInfo = dbInfo;
-        this.dataSource = datasource;
         this.treeModel = treeModel;
         this.treeDbs = treeDbs;
         this.eventManager = eventManager;
@@ -41,7 +38,7 @@ public class LazyDbInfoNode extends LazyLoadNode
     @Override
     protected void performLoadAction()
     {
-        LazyDataLoader dataLoader = new LazyDataLoader(dataSource, getDbInfo(), this);
+        LazyDataLoader dataLoader = new LazyDataLoader(getDbInfo(), this);
         dataLoader.execute();
     }
 
@@ -52,13 +49,11 @@ public class LazyDbInfoNode extends LazyLoadNode
 
     private class LazyDataLoader extends SwingWorker<DbInfo, Void>
     {
-        DataSource dataSource;
         DbInfo dbInfo;
         DefaultMutableTreeNode dbNode;
 
-        public LazyDataLoader(DataSource ds, DbInfo dbInfo, DefaultMutableTreeNode dbNode)
+        public LazyDataLoader( DbInfo dbInfo, DefaultMutableTreeNode dbNode)
         {
-            this.dataSource = ds;
             this.dbInfo = dbInfo;
             this.dbNode = dbNode;
         }
@@ -68,8 +63,7 @@ public class LazyDbInfoNode extends LazyLoadNode
         {
             try
             {
-                DbInfoDAO dao = new DbInfoDAO(dataSource);
-                dao.refreshDbInfo(dbInfo);
+                dbInfo.refreshToDefault();
             }
             catch (SQLException ex)
             {
@@ -106,10 +100,10 @@ public class LazyDbInfoNode extends LazyLoadNode
         private DefaultMutableTreeNode getTableNode(Table table)
         {
             DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
-            LazyLoadColumnsNode columns = new LazyLoadColumnsNode(dataSource, dbInfo.getDbName(), table, treeModel);
-            DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dataSource, dbInfo.getDbName(), table, treeModel);
-            LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
-            LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dataSource, dbInfo.getDbName(), table, treeModel);
+            LazyLoadColumnsNode columns = new LazyLoadColumnsNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
+            DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
+            LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
+            LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
             tableNode.add(columns);
             tableNode.add(indexes);
             tableNode.add(foreignKeys);
@@ -123,7 +117,7 @@ public class LazyDbInfoNode extends LazyLoadNode
             for (Procedure procedure : dbInfo.getProcedures())
             {
                 DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
-                procedureNode.add(new LazyLoadParametersNode(dataSource, procedure, treeModel));
+                procedureNode.add(new LazyLoadParametersNode(dbInfo.getDbInfoDAO(), procedure, treeModel));
                 procedures.add(procedureNode);
             }
             treeModel.insertNodeInto(procedures, dbNode, nodeIndex);

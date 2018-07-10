@@ -41,11 +41,7 @@ public class Table extends DbObject
         return indexes;
     }
 
-    @Override
-    public String getAutoCompletion()
-    {
-        return getSchemaName() + "." + getName();
-    }
+
 
     public List<ForeignKey> getForeignKeys()
     {

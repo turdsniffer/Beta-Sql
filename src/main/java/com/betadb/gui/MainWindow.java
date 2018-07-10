@@ -1,7 +1,7 @@
 package com.betadb.gui;
 
-import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.connection.ConnectionsPanel;
+import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventListener;
 import com.betadb.gui.events.EventManager;
@@ -123,10 +123,10 @@ public class MainWindow extends javax.swing.JFrame implements EventListener
     {
         if (event == SQL_CONNECTION_REQUESTED)
         {
-            DbConnection connectionInfo = (DbConnection) value;
+            DbConnection dbConnection = (DbConnection) value;
             SqlPanel sqlPanel = sqlPanelProvider.get();
-            sqlPanel.setDbConnectInfo(connectionInfo);
-            View view = new View(connectionInfo.getDataSourceKey() + " (" + connectionInfo.getDbInfo().getDbName() + ")", null, sqlPanel);
+            sqlPanel.setDbConnectInfo(dbConnection);
+            View view = new View(dbConnection.getServer().getServerName() + " (" + dbConnection.getSelectedDb() + ")", null, sqlPanel);
 
             tabWindow.addTab(view);
         }

@@ -100,7 +100,7 @@ public class DataSourceManager {
 			dataSource.setUsername( username );
 			dataSource.setPassword( password );
 			dataSource.setValidationQuery( "select 1" );
-			connection = dataSource.getConnection();			
+			connection = dataSource.getConnection();	            
 		}
 		finally
 		{		

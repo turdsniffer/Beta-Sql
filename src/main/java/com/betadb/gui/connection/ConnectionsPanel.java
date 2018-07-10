@@ -6,6 +6,7 @@ import com.betadb.gui.datasource.DataSourceManager;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.dbobjects.DbObject;
 import com.betadb.gui.dbobjects.DbObjectType;
+import com.betadb.gui.dbobjects.Server;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.*;
@@ -19,13 +20,11 @@ import com.google.inject.Singleton;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.showMessageDialog;
 import javax.swing.JSeparator;
 import javax.swing.event.TreeExpansionEvent;
@@ -41,102 +40,96 @@ import javax.swing.tree.TreeSelectionModel;
  */
 @Singleton
 public class ConnectionsPanel extends javax.swing.JPanel implements EventListener
-{	
-        private DefaultMutableTreeNode root;
-	private DefaultTreeModel treeModel;
-	private final EventManager eventManager;
-	private final Multimap<DbObjectType, JMenuItem> contextMenuButtonMap = HashMultimap.create();
-	private final List<JMenuItem> defaultContextButtons;
-	
-	@Inject FindObjectDialog findObjectDialog;
-	@Inject ConnectDialog connectDialog;
-	@Inject TablePrivileges tablePrivileges;
-	@Inject private DataSourceManager dataSourceManager;
-	
-	/**
-	 * Creates new form ConnectionsPanel
-	 */
-	@Inject
-	private ConnectionsPanel(EventManager eventManager)
-	{
-		eventManager.addEventListener(this);
-		this.eventManager = eventManager;
-		initComponents();
-		treeDbs.setEditable(false);
-		treeDbs.addMouseListener(new NodeMouseListener());
-		treeDbs.addTreeExpansionListener(new NodeExpansionListener());
-		treeDbs.setCellRenderer(new ConnectionsTreeCellRenderer());
-		defaultContextButtons = Lists.newArrayList(btnConnect,btnFind, refresh);
-		contextMenuButtonMap.putAll(DbObjectType.FUNCTION, Lists.newArrayList(btnScript));
-		contextMenuButtonMap.putAll(DbObjectType.PROCEDURE, Lists.newArrayList(btnScript));
-		contextMenuButtonMap.putAll(DbObjectType.VIEW, Lists.newArrayList(btnScript,btnPrivileges));
-		contextMenuButtonMap.putAll(DbObjectType.TABLE, Lists.newArrayList(btnPrivileges));
-		
-	}
+{
+    private DefaultMutableTreeNode root;
+    private DefaultTreeModel treeModel;
+    private final EventManager eventManager;
+    private final Multimap<DbObjectType, JMenuItem> contextMenuButtonMap = HashMultimap.create();
+    private final List<JMenuItem> defaultContextButtons;
 
-	private void addDataSource(DataSourceKey dataSourceKey)
-	{
-		try
-		{			
-			DataSource dataSource = dataSourceManager.getDataSourceByDbId(dataSourceKey);
+    @Inject
+    FindObjectDialog findObjectDialog;
+    @Inject
+    ConnectDialog connectDialog;
+    @Inject
+    TablePrivileges tablePrivileges;
+    @Inject
+    private DataSourceManager dataSourceManager;
 
-			DefaultMutableTreeNode server = new DefaultMutableTreeNode(dataSourceKey);
-			addDataBases(dataSource, server);
-			DefaultTreeModel model = (DefaultTreeModel) treeDbs.getModel();
-			DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
-			model.insertNodeInto(server, root, root.getChildCount());
-			treeDbs.scrollPathToVisible(new TreePath(server.getPath()));
-		}
-		catch (SQLException ex)
-		{
-			showMessageDialog(this, "Error getting databases." + ex.getMessage(), "Connect Error", JOptionPane.ERROR_MESSAGE);
-		}
+    /**
+     * Creates new form ConnectionsPanel
+     */
+    @Inject
+    private ConnectionsPanel(EventManager eventManager)
+    {
+        eventManager.addEventListener(this);
+        this.eventManager = eventManager;
+        initComponents();
+        treeDbs.setEditable(false);
+        treeDbs.addMouseListener(new NodeMouseListener());
+        treeDbs.addTreeExpansionListener(new NodeExpansionListener());
+        treeDbs.setCellRenderer(new ConnectionsTreeCellRenderer());
+        defaultContextButtons = Lists.newArrayList(btnConnect, btnFind, refresh);
+        contextMenuButtonMap.putAll(DbObjectType.FUNCTION, Lists.newArrayList(btnScript));
+        contextMenuButtonMap.putAll(DbObjectType.PROCEDURE, Lists.newArrayList(btnScript));
+        contextMenuButtonMap.putAll(DbObjectType.VIEW, Lists.newArrayList(btnScript, btnPrivileges));
+        contextMenuButtonMap.putAll(DbObjectType.TABLE, Lists.newArrayList(btnPrivileges));
 
-	}
+    }
 
-	private void addDataBases(DataSource dataSource, DefaultMutableTreeNode top) throws SQLException
-	{
-		List<DbInfo> infos = new ArrayList<>();
+    private void addServer(DataSourceKey dataSourceKey)
+    {
+        DataSource ds = dataSourceManager.getDataSourceByDbId(dataSourceKey);
+        DbInfoDAO dbInfoDAO = new DbInfoDAO(ds);
+        Server server = new Server(dataSourceKey.getDbServerName(), dataSourceKey.getInstanceName(), dataSourceKey.getDbName(), dbInfoDAO);
+        
+        DefaultMutableTreeNode serverNode = new DefaultMutableTreeNode(server);
 
-		DbInfoDAO dao = new DbInfoDAO(dataSource);
-		infos = dao.getDatabases();
-		for (DbInfo dbInfo : infos)
-			top.add(new LazyDbInfoNode(dbInfo, dataSource, treeModel, treeDbs, eventManager));
-	}
+        for (DbInfo dbInfo : server.getDbs())
+            serverNode.add(new LazyDbInfoNode(dbInfo, treeModel, treeDbs, eventManager));
 
-	@Override
-	public void EventOccurred(Event event, Object value)
-	{
-		if (event == DATA_SOURCE_ADDED)
-		{		
-			addDataSource((DataSourceKey) value);
-		}
-		if (event == DB_OBJECT_SELECTED)
-		{
-			DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
-			if (lastPathComponent == null)
-				return;
-			Object currentlySelectedNode = lastPathComponent.getUserObject();
-			if (currentlySelectedNode != value)
-			{
-				for (Enumeration e = root.depthFirstEnumeration(); e.hasMoreElements();)
-				{
-					DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
-					if (node.getUserObject() == value)
-					{
-						TreePath treePath = new TreePath(node.getPath());
-						treeDbs.setSelectionPath(treePath);
-						treeDbs.scrollPathToVisible(treePath);
-					}
-				}
-			}
-		}
-	}
+        DefaultTreeModel model = (DefaultTreeModel) treeDbs.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        model.insertNodeInto(serverNode, root, root.getChildCount());
+        treeDbs.scrollPathToVisible(new TreePath(serverNode.getPath()));
+    }
 
-	/**
-	 * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The content of this method is always regenerated by the Form Editor.
-	 */
-	@SuppressWarnings("unchecked")
+    @Override
+    public void EventOccurred(Event event, Object value)
+    {
+        if (event == DATA_SOURCE_ADDED)
+        {
+            DataSourceKey dataSourceKey = (DataSourceKey) value;
+
+            addServer(dataSourceKey);
+        }
+        if (event == DB_OBJECT_SELECTED)
+        {
+            DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+            if (lastPathComponent == null)
+                return;
+            Object currentlySelectedNode = lastPathComponent.getUserObject();
+            if (currentlySelectedNode != value)
+            {
+                for (Enumeration e = root.depthFirstEnumeration(); e.hasMoreElements();)
+                {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
+                    if (node.getUserObject() == value)
+                    {
+                        TreePath treePath = new TreePath(node.getPath());
+                        treeDbs.setSelectionPath(treePath);
+                        treeDbs.scrollPathToVisible(treePath);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The
+     * content of this method is always regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents()
     {
@@ -255,119 +248,118 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
 
 	private void btnAddDataSourceActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnAddDataSourceActionPerformed
 	{//GEN-HEADEREND:event_btnAddDataSourceActionPerformed
-		connectDialog.setLocationRelativeTo(btnConnect);
-		connectDialog.setVisible(true);
-		
+        connectDialog.setLocationRelativeTo(btnConnect);
+        connectDialog.setVisible(true);
+
 	}//GEN-LAST:event_btnAddDataSourceActionPerformed
 
 	private void btnConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnConnectActionPerformed
 	{//GEN-HEADEREND:event_btnConnectActionPerformed
 
-		DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 
-		if (node == null)
-			return;
-		if(node instanceof LazyDbInfoNode)
-			treeDbs.expandPath(new TreePath(node.getPath()));
-		
-		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		DbInfo dbInfo = dbInfoNode.getDbInfo();
-				
-		DataSourceKey dataSourceKey = (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
-		eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, dataSourceKey));
+        if (node == null)
+            return;
+        if (node instanceof LazyDbInfoNode)
+            treeDbs.expandPath(new TreePath(node.getPath()));
+
+        Server server = getServerForNode(node);
+        LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+
+        eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(server, dbInfoNode.getDbInfo().getName()));
 	}//GEN-LAST:event_btnConnectActionPerformed
 
 	private void treeDbsValueChanged(javax.swing.event.TreeSelectionEvent evt)//GEN-FIRST:event_treeDbsValueChanged
 	{//GEN-HEADEREND:event_treeDbsValueChanged
-		DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) evt.getPath().getLastPathComponent();
-		Object userObject = lastPathComponent.getUserObject();
+        DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) evt.getPath().getLastPathComponent();
+        Object userObject = lastPathComponent.getUserObject();
 
-		if (userObject instanceof DbObject)
-			eventManager.fireEvent(DB_OBJECT_SELECTED, userObject);
+        if (userObject instanceof DbObject)
+            eventManager.fireEvent(DB_OBJECT_SELECTED, userObject);
 	}//GEN-LAST:event_treeDbsValueChanged
 
 	private void refreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_refreshActionPerformed
 	{//GEN-HEADEREND:event_refreshActionPerformed
-		DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 
-		if (node == null)
-			return;
-		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		dbInfoNode.load(true);
+        if (node == null)
+            return;
+        LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+        dbInfoNode.load(true);
 	}//GEN-LAST:event_refreshActionPerformed
 
 	private void btnScriptActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnScriptActionPerformed
 	{//GEN-HEADEREND:event_btnScriptActionPerformed
-		try
-		{
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
-			DataSource dataSource = getDataSourceForNode(node);
-			DbInfo dbInfo = getDbInfoForNode(node);
-			DataSourceKey server = getServerForNode(node);
-			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
-			DbObject userObject = (DbObject) node.getUserObject();
+        try
+        {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+            DataSource dataSource = getDataSourceForNode(node);
+            DbInfo dbInfo = getDbInfoForNode(node);
+            Server server = getServerForNode(node);
+            DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+            DbObject userObject = (DbObject) node.getUserObject();
 
-			String script = dbInfoDAO.getScript(userObject, dbInfo.getDbName());
-			eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(dbInfo, server, script));
-		}
-		catch (SQLException ex)
-		{
-			showMessageDialog(this, ex.getMessage());
-		}
+            String script = dbInfoDAO.getScript(userObject, dbInfo.getName());
+            eventManager.fireEvent(SQL_CONNECTION_REQUESTED, new DbConnection(server, script));
+        }
+        catch (SQLException ex)
+        {
+            showMessageDialog(this, ex.getMessage());
+        }
 	}//GEN-LAST:event_btnScriptActionPerformed
 
-	private DataSourceKey getServerForNode(DefaultMutableTreeNode node)
-	{
-		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		return  (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
-	}
+    private Server getServerForNode(DefaultMutableTreeNode node)
+    {
+        LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+        return (Server) ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
+    }
 
-	private DataSource getDataSourceForNode(DefaultMutableTreeNode node)
-	{
-		LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
-		DataSourceKey key = (DataSourceKey)((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
-		return dataSourceManager.getDataSourceByDbId(key);
-	}
+    private DataSource getDataSourceForNode(DefaultMutableTreeNode node)
+    {
+        LazyDbInfoNode dbInfoNode = getDbInfoNode(node);
+        Server server = (Server) ((DefaultMutableTreeNode) dbInfoNode.getParent()).getUserObject();
+        return dataSourceManager.getDataSourceByDbId(new DataSourceKey(server.getServerName(), server.getInstanceName(), dbInfoNode.getDbInfo().getName()));
+    }
 
-	private DbInfo getDbInfoForNode(DefaultMutableTreeNode node)
-	{
-		return getDbInfoNode(node).getDbInfo();
-	}
+    private DbInfo getDbInfoForNode(DefaultMutableTreeNode node)
+    {
+        return getDbInfoNode(node).getDbInfo();
+    }
 
-	private LazyDbInfoNode getDbInfoNode(DefaultMutableTreeNode node)
-	{
-		while (!(node instanceof LazyDbInfoNode))
-			node = (DefaultMutableTreeNode) node.getParent();
-		return (LazyDbInfoNode)node;
-	}
+    private LazyDbInfoNode getDbInfoNode(DefaultMutableTreeNode node)
+    {
+        while (!(node instanceof LazyDbInfoNode))
+            node = (DefaultMutableTreeNode) node.getParent();
+        return (LazyDbInfoNode) node;
+    }
 
 
     private void btnFindActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnFindActionPerformed
     {//GEN-HEADEREND:event_btnFindActionPerformed
-		DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 
-		if (node == null)
-			return;
-		LazyDbInfoNode dbNode = getDbInfoNode(node);
-		dbNode.load();
-		findObjectDialog.show(dbNode.getDbInfo());
-		findObjectDialog.setLocationRelativeTo(this);
-		findObjectDialog.setVisible(true);
+        if (node == null)
+            return;
+        LazyDbInfoNode dbNode = getDbInfoNode(node);
+        dbNode.load();
+        findObjectDialog.show(dbNode.getDbInfo());
+        findObjectDialog.setLocationRelativeTo(this);
+        findObjectDialog.setVisible(true);
     }//GEN-LAST:event_btnFindActionPerformed
 
     private void btnPrivilegesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrivilegesActionPerformed
     {//GEN-HEADEREND:event_btnPrivilegesActionPerformed
 
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeDbs.getLastSelectedPathComponent();
 
-			if (!(node.getUserObject() instanceof Table))
-				return;
-			Table table = (Table) node.getUserObject();
-			DataSource dataSource = getDataSourceForNode(node);
-			DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
-			DbInfo dbInfo = getDbInfoForNode(node);
-			List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges( table);
-			this.tablePrivileges.show(tablePrivileges);
+        if (!(node.getUserObject() instanceof Table))
+            return;
+        Table table = (Table) node.getUserObject();
+        DataSource dataSource = getDataSourceForNode(node);
+        DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+        DbInfo dbInfo = getDbInfoForNode(node);
+        List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges(table);
+        this.tablePrivileges.show(tablePrivileges);
 
 
     }//GEN-LAST:event_btnPrivilegesActionPerformed
@@ -387,56 +379,55 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private javax.swing.JTree treeDbs;
     // End of variables declaration//GEN-END:variables
 
+    private class NodeExpansionListener implements TreeExpansionListener
+    {
+        @Override
+        public void treeExpanded(TreeExpansionEvent tee)
+        {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) tee.getPath().getLastPathComponent();
+            if (node instanceof LazyLoadNode)
+                ((LazyLoadNode) node).load();
+        }
 
-	private class NodeExpansionListener implements TreeExpansionListener
-	{
-		@Override
-		public void treeExpanded(TreeExpansionEvent tee)
-		{
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) tee.getPath().getLastPathComponent();
-			if (node instanceof LazyLoadNode)
-				((LazyLoadNode) node).load();
-		}
+        @Override
+        public void treeCollapsed(TreeExpansionEvent tee)
+        {
+        }
+    }
 
-		@Override
-		public void treeCollapsed(TreeExpansionEvent tee){}
-	}
+    private class NodeMouseListener extends MouseAdapter
+    {
+        public void mouseReleased(MouseEvent e)
+        {
+            mousePressed(e);
+        }
 
-	private class NodeMouseListener extends MouseAdapter
-	{
-		public void mouseReleased(MouseEvent e)
-		{
-			mousePressed(e);
-		}
+        public void mousePressed(MouseEvent e)
+        {
+            if (e.isPopupTrigger())
+            {
+                int selRow = treeDbs.getRowForLocation(e.getX(), e.getY());
+                TreePath selPath = treeDbs.getPathForLocation(e.getX(), e.getY());
+                treeDbs.setSelectionPath(selPath);
+                if (selRow != -1)
+                {
+                    DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) selPath.getLastPathComponent();
+                    Object userObject = lastPathComponent.getUserObject();
+                    dbObjectPopupMenu.removeAll();
 
-		public void mousePressed(MouseEvent e)
-		{
-			if (e.isPopupTrigger())
-			{
-				int selRow = treeDbs.getRowForLocation(e.getX(), e.getY());
-				TreePath selPath = treeDbs.getPathForLocation(e.getX(), e.getY());
-				treeDbs.setSelectionPath(selPath);
-				if (selRow != -1)
-				{
-					DefaultMutableTreeNode lastPathComponent = (DefaultMutableTreeNode) selPath.getLastPathComponent();
-					Object userObject = lastPathComponent.getUserObject();
-					dbObjectPopupMenu.removeAll();
-					
-					
-					
-					if(userObject instanceof DbObject)
-					{
-						for (JMenuItem menuItem : contextMenuButtonMap.get(((DbObject)userObject).getObjectType()))
-							dbObjectPopupMenu.add(menuItem);
-						dbObjectPopupMenu.add(new JSeparator());
-					}	
-						
-					if(userObject instanceof DbObject ||  userObject instanceof DbInfo)
-						for (JMenuItem defaultContextButton : defaultContextButtons)
-							dbObjectPopupMenu.add(defaultContextButton);
-					dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
-				}
-			}
-		}
-	}	
+                    if (userObject instanceof DbObject)
+                    {
+                        for (JMenuItem menuItem : contextMenuButtonMap.get(((DbObject) userObject).getObjectType()))
+                            dbObjectPopupMenu.add(menuItem);
+                        dbObjectPopupMenu.add(new JSeparator());
+                    }
+
+                    if (userObject instanceof DbObject || userObject instanceof DbInfo)
+                        for (JMenuItem defaultContextButton : defaultContextButtons)
+                            dbObjectPopupMenu.add(defaultContextButton);
+                    dbObjectPopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        }
+    }
 }

@@ -13,7 +13,6 @@ package com.betadb.gui.sql;
 import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.datasource.DataSourceManager;
 import static com.betadb.gui.datasource.SQLUtils.close;
-import com.betadb.gui.dbobjects.DbInfo;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import java.awt.Component;
@@ -43,7 +42,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 public class ResultsPanel extends javax.swing.JPanel
 {
 	private DataSource ds;
-	private DbInfo dbInfo;
+	private DbConnection dbConnection;
 	private Connection conn;
 	private Statement stmt;
 
@@ -70,12 +69,12 @@ public class ResultsPanel extends javax.swing.JPanel
 		jSplitPane1.setResizeWeight(1);
 	}
 
-	public void setDbConnectInfo(DbConnection connectionInfo)
+	public void setDbConnectInfo(DbConnection dbConnection)
 	{
 		try
 		{
-			ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
-			dbInfo = connectionInfo.getDbInfo();
+            this.dbConnection = dbConnection;
+			ds = dataSourceManager.getDataSourceByDbId(dbConnection.getServer().getDataSourceKey());
 			resetConnection();
 
 		}
@@ -88,7 +87,7 @@ public class ResultsPanel extends javax.swing.JPanel
 	private void resetConnection() throws SQLException
 	{
 		conn = ds.getConnection();
-		conn.setCatalog(dbInfo.getDbName());
+		conn.setCatalog(this.dbConnection.getSelectedDb());
 	}
 
 	public void executeSql(String sql)

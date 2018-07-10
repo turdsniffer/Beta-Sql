@@ -1,6 +1,8 @@
 
 package com.betadb.gui.datasource;
 
+import java.util.Objects;
+
 /**
  * @author parmstrong
  */
@@ -42,4 +44,35 @@ public class DataSourceKey
 			key+="/"+instanceName;
 		return key;
 	}
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 97 * hash + Objects.hashCode(this.serverName);
+        hash = 97 * hash + Objects.hashCode(this.instanceName);
+        hash = 97 * hash + Objects.hashCode(this.dbName);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final DataSourceKey other = (DataSourceKey) obj;
+        if (!Objects.equals(this.serverName, other.serverName))
+            return false;
+        if (!Objects.equals(this.instanceName, other.instanceName))
+            return false;
+        if (!Objects.equals(this.dbName, other.dbName))
+            return false;
+        return true;
+    }
+    
+    
 }

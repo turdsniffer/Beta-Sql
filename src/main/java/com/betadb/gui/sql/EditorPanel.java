@@ -7,7 +7,6 @@ package com.betadb.gui.sql;
 
 import com.betadb.gui.autocomplete.BetaDbPopupListCellRenderer;
 import com.betadb.gui.autocomplete.SqlSubSuggestionsWordSearchProvider;
-import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.dbobjects.DbInfo;
 import com.betadb.gui.events.Event;
 import com.betadb.gui.events.EventListener;
@@ -16,7 +15,10 @@ import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
 import com.swingautocompletion.main.AutoCompletePopup;
 import com.betadb.gui.autocomplete.DefaultAutoCompleteItems;
+import com.betadb.gui.connection.DbConnection;
 import com.betadb.gui.dbobjects.DbObject;
+import com.betadb.gui.dbobjects.Schema;
+import com.betadb.gui.dbobjects.Server;
 import com.betadb.gui.util.TemplateEditor;
 import com.betadb.gui.util.UnderlineHighlighter;
 import com.google.common.collect.Maps;
@@ -31,6 +33,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +60,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
     private final RSyntaxTextArea codeEditor;
     private final AutoCompletePopup autoCompletePopup;
-    private DbInfo dbInfo;
+    private Server server;
     boolean isTemplateEditing = false;
     private final TemplateEditor templateEditor;
     private final EventManager EventManager;
@@ -76,7 +79,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     {
         eventManager.addEventListener(this);
         this.EventManager = eventManager;
-		this.sqlTemplateDialog = sqlTemplateDialog;
+        this.sqlTemplateDialog = sqlTemplateDialog;
         initComponents();
 
         codeEditor = new RSyntaxTextArea();
@@ -92,13 +95,13 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 }
                 if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_F)
                 {
-                    searchBar.setVisible(true);     
+                    searchBar.setVisible(true);
                     txtSearchField.requestFocus();
-					txtSearchField.selectAll();
+                    txtSearchField.selectAll();
                 }
             }
         };
-		codeEditor.addKeyListener(keyAdapter);
+        codeEditor.addKeyListener(keyAdapter);
         templateEditor = new TemplateEditor(codeEditor);
         txtSearchField.addKeyListener(keyAdapter);
         searchBar.setVisible(false);
@@ -108,6 +111,27 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         {
             int startPosition = codeEditor.getCaretPosition() - autoCompleteItem.getAutoCompletion().length();
             templateEditor.initiateTemplateEditing(startPosition, autoCompleteItem.getAutoCompletion().length());
+        });
+        autoCompletePopup.addAutoCompleteHandler((AutoCompleteItem autoCompleteItem) ->
+        {
+            try
+            {
+                if (autoCompleteItem instanceof Schema)
+                {
+                    Schema schema = (Schema) autoCompleteItem;
+                    this.server.getDb(schema.getDatabaseName()).loadSchemaInfo(schema.getName());
+                    this.refreshAutoCompleteOptions();
+                }
+                if (autoCompleteItem instanceof DbInfo)
+                {
+                    ((DbInfo) autoCompleteItem).load();
+                    this.refreshAutoCompleteOptions();
+                }
+            }
+            catch (SQLException ex)
+            {
+                Logger.getLogger(EditorPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
 
         JScrollPane scrPane = new JScrollPane(codeEditor);
@@ -119,24 +143,24 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         codeEditor.addMouseMotionListener(new MouseMotionAdapter()
         {
             public void mouseMoved(MouseEvent e)
-            {      
-                if(navigationHighlight != null)
+            {
+                if (navigationHighlight != null)
                 {
                     codeEditor.getHighlighter().removeHighlight(navigationHighlight);
                     navigationHighlight = null;
                 }
-                
-                if(e.isControlDown())
+
+                if (e.isControlDown())
                 {
                     int characterPosition = codeEditor.viewToModel(e.getPoint());
                     Pair<Integer, Integer> wordBounds = TextEditorUtils.getWordBounds(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
                     String word = TextEditorUtils.getCurrentWord(wordBounds, codeEditor);
                     DbObject dbObject = autoCompleteToDbObjectMap.get(word);
-                    if(dbObject != null)
+                    if (dbObject != null)
                     {
                         try
                         {
-                            navigationHighlight = codeEditor.getHighlighter().addHighlight(wordBounds.getFirst(), wordBounds.getSecond(), navigationHightlight);                            
+                            navigationHighlight = codeEditor.getHighlighter().addHighlight(wordBounds.getFirst(), wordBounds.getSecond(), navigationHightlight);
                         }
                         catch (BadLocationException ex)
                         {
@@ -148,9 +172,9 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         });
         codeEditor.addMouseListener(new MouseAdapter()
         {
-            public void mouseClicked(MouseEvent e) 
-            {               
-                if(e.isControlDown())
+            public void mouseClicked(MouseEvent e)
+            {
+                if (e.isControlDown())
                 {
                     int characterPosition = codeEditor.viewToModel(e.getPoint());
                     String word = TextEditorUtils.getWord(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
@@ -159,17 +183,15 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 }
             }
         });
-		
-		codeEditor.setPopupMenu(jPopupMenu1);
+
+        codeEditor.setPopupMenu(jPopupMenu1);
 
     }
-    
 
-
-    public void setDbConnectInfo(DbConnection connectionInfo)
+    public void setDbConnectInfo(DbConnection dbConnection)
     {
-        dbInfo = connectionInfo.getDbInfo();
-        codeEditor.setText(connectionInfo.getStartingSql());
+        server = dbConnection.getServer();
+        codeEditor.setText(dbConnection.getStartingSql());
         refreshAutoCompleteOptions();
     }
 
@@ -178,11 +200,10 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         List<AutoCompleteItem> autoCompletePossibilities = new ArrayList<>();
         autoCompletePossibilities.addAll(DefaultAutoCompleteItems.getitems());
         autoCompletePossibilities.addAll(sqlTemplateDialog.getSavedTemplatesAsAutoCompleteItems());
-        autoCompletePossibilities.addAll(dbInfo.getAllDbObjects());
-		autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
-		
+        autoCompletePossibilities.addAll(server.getAllDbObjects());
+        autoCompletePopup.setAutoCompletePossibilties(autoCompletePossibilities);
 
-        for (DbObject dbObject : dbInfo.getAllDbObjects())
+        for (DbObject dbObject : server.getAllDbObjects())
         {
             autoCompleteToDbObjectMap.put(dbObject.getAutoCompleteId(), dbObject);
             for (String alternateAutoComplete : dbObject.alternateAutoCompeteIds())
@@ -215,9 +236,8 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     }
 
     /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
+     * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The
+     * content of this method is always regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -301,8 +321,8 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
     private void btnEditTemplateActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnEditTemplateActionPerformed
     {//GEN-HEADEREND:event_btnEditTemplateActionPerformed
-		String selectedText = codeEditor.getSelectedText();
-		sqlTemplateDialog.createAsTemplate(selectedText);
+        String selectedText = codeEditor.getSelectedText();
+        sqlTemplateDialog.createAsTemplate(selectedText);
     }//GEN-LAST:event_btnEditTemplateActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -323,7 +343,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         if (event.equals(Event.DB_INFO_UPDATED))
         {
             DbInfo dbInfo = (DbInfo) value;
-            if (this.dbInfo.equals(dbInfo))
+            if (server != null && this.server.equals(dbInfo))
             {
                 refreshAutoCompleteOptions();
             }
@@ -367,7 +387,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
     void linkItemAtCaretToObjectTree()
     {
         String sql = this.getCurrentWord();
-        List<DbObject> matchingDbObjects = dbInfo.getAllDbObjects().stream().filter(o -> o.getAutoCompleteId().equalsIgnoreCase(sql) || o.alternateAutoCompeteIds().contains(sql)).collect(Collectors.toList());
+        List<DbObject> matchingDbObjects = server.getAllDbObjects().stream().filter(o -> o.getAutoCompleteId().equalsIgnoreCase(sql) || o.alternateAutoCompeteIds().contains(sql)).collect(Collectors.toList());
         if (matchingDbObjects.size() == 1)
             EventManager.fireEvent(Event.DB_OBJECT_SELECTED, matchingDbObjects.get(0));
     }

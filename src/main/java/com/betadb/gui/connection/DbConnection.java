@@ -1,45 +1,41 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.datasource.DataSourceKey;
-import com.betadb.gui.dbobjects.DbInfo;
-
+import com.betadb.gui.dbobjects.Server;
 
 /**
  * @author parmstrong
  */
 public class DbConnection
 {
-	private final DbInfo dbInfo;
-	private final DataSourceKey dataSourceKey;
-	private final String startingSql;
+    private final Server server;
+    private final String startingSql;
+    private final String selectedDb;
 
-	public DbConnection(DbInfo dbInfo, DataSourceKey dataSourceKey)
-	{
-		this.dbInfo = dbInfo;
-		this.dataSourceKey= dataSourceKey;
-		this.startingSql = "";
-	}
+    public DbConnection(Server server, String selectedDb)
+    {
+        this(server, "", selectedDb);
+    }
 
-	public DbConnection(DbInfo dbInfo, DataSourceKey dataSourceKey, String startingSql)
-	{
-		this.dbInfo = dbInfo;
-		this.dataSourceKey = dataSourceKey;
-		this.startingSql = startingSql;
-	}	
+    public DbConnection(Server server, String startingSql, String selectedDb)
+    {
+        this.server = server;
+        this.startingSql = "";
+        this.selectedDb = selectedDb;
+    }
 
-	public DbInfo getDbInfo()
-	{
-		return dbInfo;
-	}
+    public Server getServer()
+    {
+        return server;
+    }
 
-	public DataSourceKey getDataSourceKey()
-	{
-		return dataSourceKey;
-	}
+    public String getStartingSql()
+    {
+        return startingSql;
+    }
 
-	public String getStartingSql()
-	{
-		return startingSql;
-	}
-	
+    public String getSelectedDb()
+    {
+        return selectedDb;
+    }
+
 }

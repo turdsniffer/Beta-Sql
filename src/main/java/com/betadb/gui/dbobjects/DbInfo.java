@@ -1,114 +1,114 @@
 package com.betadb.gui.dbobjects;
 
+import com.betadb.gui.dao.DbInfoDAO;
+import com.google.common.collect.Lists;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author parmstrong
  */
-public class DbInfo
+public class DbInfo extends DbObject
 {
-	private String dbName;
-	private String defaultSchema;
-	
-	private boolean lazyDataLoaded;
-	private List<Table>tables;
-	private List<Procedure>procedures;
-	private List<View>views;
-	private List<Function>functions;
+	private DbInfoDAO dbInfoDAO;
+    private List<Schema> schemas;
+    private List<String> loadedSchemas;
+    private boolean loaded;
 
-	public DbInfo(String dbName)
+
+	public DbInfo(String dbName, DbInfoDAO dbInfoDAO)
 	{
-		this.dbName = dbName;
-		this.defaultSchema = "dbo";
-		lazyDataLoaded = false;
-		tables = new ArrayList<>();
-		procedures = new ArrayList<>();
-		views = new ArrayList<>();
-		functions = new ArrayList<>();
+		this.name = dbName;
+        this.dbInfoDAO = dbInfoDAO;
+        schemas = Lists.newArrayList();
+        this.loadedSchemas = Lists.newArrayList();
+        
 	}	
 
 	public List<DbObject> getAllDbObjects()
 	{
 		List<DbObject> retVal = new ArrayList<>();
-		retVal.addAll(getTables());
-		retVal.addAll(getViews());
-		retVal.addAll(getFunctions());
-		retVal.addAll(getProcedures());
+        retVal.add(this);
+		retVal.addAll(this.getTables());
+		retVal.addAll(this.getViews());
+		retVal.addAll(this.getFunctions());
+		retVal.addAll(this.getProcedures());
+        retVal.addAll(this.getSchemas());
 		return retVal;
 	}
 
-	public String getDbName()
-	{
-		return dbName;
-	}
+    //This method will refresh this dbinfo back to a default state with only the default schema loaded
+    public void refreshToDefault() throws SQLException{
+        this.getDbInfoDAO().refreshDbInfo(this);
+    }
+    
+
 	
 	@Override
 	public String toString()
 	{
-		return dbName;
+		return name;
 	}
 
-	public List<Table> getTables()
-	{
-		return tables;
-	}
+    public void loadSchemaInfo(String schemaName) throws SQLException{
+        Optional<Schema> schema = this.schemas.stream().filter(s -> s.getName().equalsIgnoreCase(schemaName)).findFirst();
+        if(schema.isPresent() && !schema.get().isLoaded())
+            this.dbInfoDAO.loadSchemaInfo(this, schema.get());
+    }
 
-	public void setTables(List<Table> tables)
+    public void load() throws SQLException{
+        if(!loaded)
+        {    
+            dbInfoDAO.refreshDbInfo(this);
+            this.loaded = true;
+        }
+    }
+    
+    
+    public DbInfoDAO getDbInfoDAO()
+    {
+        return dbInfoDAO;
+    }
+
+    public List<Table> getTables()
 	{
-		this.tables = tables;
-	}
+		return this.schemas.stream().flatMap(schema -> schema.getTables().stream()).collect(Collectors.toList());
+    }
 
 	public List<Procedure> getProcedures()
-	{
-		return procedures;
-	}
-
-	public void setProcedures(List<Procedure> procedures)
-	{
-		this.procedures = procedures;
+	{        
+		return this.schemas.stream().flatMap(schema -> schema.getProcedures().stream()).collect(Collectors.toList());
 	}
 
 	public List<View> getViews()
-	{
-		return views;
-	}
-
-	public void setViews(List<View> views)
-	{
-		this.views = views;
-	}
-
-	public boolean isLazyDataLoaded()
-	{
-		return lazyDataLoaded;
-	}
-
-	public void setLazyDataLoaded(boolean lazyDataLoaded)
-	{
-		this.lazyDataLoaded = lazyDataLoaded;
+	{        
+		return this.schemas.stream().flatMap(schema -> schema.getViews().stream()).collect(Collectors.toList());
 	}
 
 	public List<Function> getFunctions()
 	{
-		return functions;
+		return this.schemas.stream().flatMap(schema -> schema.getFunctions().stream()).collect(Collectors.toList());
 	}
 
-	public void setFunctions(List<Function> functions)
+	public Schema getDefaultSchema()
 	{
-		this.functions = functions;
+		return schemas.stream().filter(schema -> schema.getName().equalsIgnoreCase("dbo")).findFirst().get();
 	}
+    
+    public List<Schema> getSchemas()
+    {
+        return this.schemas;
+    }
 
-	public String getDefaultSchema()
-	{
-		return defaultSchema;
-	}
-
-	public void setDefaultSchema(String defaultSchema)
-	{
-		this.defaultSchema = defaultSchema;
-	}
+    public void setSchemas(List<Schema> schemas)
+    {
+        this.schemas = schemas;
+    }
+    
 
 	@Override
 	public int hashCode()
@@ -127,7 +127,7 @@ public class DbInfo
 		if (getClass() != obj.getClass())
 			return false;
 		final DbInfo other = (DbInfo) obj;
-		if (!Objects.equals(this.dbName, other.dbName))
+		if (!Objects.equals(this.name, other.name))
 			return false;
 		return true;
 	}

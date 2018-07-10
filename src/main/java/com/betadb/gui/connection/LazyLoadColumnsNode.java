@@ -4,7 +4,6 @@ import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.Table;
 import java.util.List;
-import javax.sql.DataSource;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -17,10 +16,10 @@ public class LazyLoadColumnsNode extends LazyLoadNode
     private final String dbName;
     private final Table table;
 
-    public LazyLoadColumnsNode(DataSource datasource, String dbName, Table table, DefaultTreeModel treeModel)
+    public LazyLoadColumnsNode(DbInfoDAO dbInfoDAO, String dbName, Table table, DefaultTreeModel treeModel)
     {
-        super("Columns", datasource, treeModel);
-        dbInfoDAO = new DbInfoDAO(datasource);
+        super("Columns", treeModel);
+        this.dbInfoDAO = dbInfoDAO;
         this.dbName = dbName;
         this.table = table;
 

@@ -74,7 +74,7 @@ public class SqlServerQueryAnalyzer extends QueryAnalyzer
 	@Override
 	public void analyze(String sql)
 	{
-		jdbcTemplate.execute("use " + dbInfo.getDbName());
+		jdbcTemplate.execute("use " + dbInfo.getName());
 		jdbcTemplate.execute("set showplan_all on");
 		List<PlanRow> planRows = jdbcTemplate.query(sql, new RowMapper<PlanRow>()
 		{
@@ -218,9 +218,9 @@ public class SqlServerQueryAnalyzer extends QueryAnalyzer
 	public void setDbInfo(DbConnection connectionInfo)
 	{
 
-		ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getDataSourceKey());
+		ds = dataSourceManager.getDataSourceByDbId(connectionInfo.getServer().getDataSourceKey());
 		this.jdbcTemplate = new JdbcTemplate(ds);
-		dbInfo = connectionInfo.getDbInfo();
+		dbInfo = connectionInfo.getServer().getDb(connectionInfo.getSelectedDb());
 	}
 
 	private static class PlanRow
