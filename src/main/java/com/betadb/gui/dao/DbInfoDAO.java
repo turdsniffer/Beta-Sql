@@ -12,6 +12,8 @@ import com.betadb.gui.dbobjects.Procedure;
 import com.betadb.gui.dbobjects.Schema;
 import com.betadb.gui.dbobjects.Table;
 import com.betadb.gui.dbobjects.View;
+import com.betadb.gui.events.Event;
+import com.betadb.gui.events.EventManager;
 import com.betadb.gui.exception.BetaDbException;
 import static com.betadb.gui.jdbc.util.ResultSetUtils.getRowAsProperties;
 import com.betadb.gui.script.ScriptUtils;
@@ -43,12 +45,13 @@ import static org.apache.commons.lang3.StringUtils.join;
 public class DbInfoDAO
 {
     DataSource ds;
+    EventManager eventManager;
 
     //add query from sys.system_objects, sys.system_columns for system views and stored procs
-    public DbInfoDAO(DataSource ds)
+    public DbInfoDAO(DataSource ds, EventManager eventManager)
     {
         this.ds = ds;
-
+        this.eventManager = eventManager;
     }
 
     public List<DbInfo> getDatabases() throws SQLException
@@ -99,6 +102,7 @@ public class DbInfoDAO
             threadPool.shutdown();
             threadPool.awaitTermination(30, TimeUnit.SECONDS);
             schema.setLoaded(true);
+            eventManager.fireEvent(Event.DB_INFO_UPDATED, info);
             return info;
         }
         catch (InterruptedException ex)
@@ -119,6 +123,8 @@ public class DbInfoDAO
             threadPool.submit(new TableLoader(info, defaultSchema));
             threadPool.shutdown();
             threadPool.awaitTermination(30, TimeUnit.SECONDS);
+            
+            eventManager.fireEvent(Event.DB_INFO_UPDATED, info);
             return info;
         }
         catch (InterruptedException ex)

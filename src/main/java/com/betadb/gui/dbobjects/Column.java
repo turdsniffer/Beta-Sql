@@ -40,6 +40,11 @@ public class Column extends DbObject
 	{
 		return getName();
 	}
+    
+    public String getAutoCompletion()
+	{        
+        return getName();
+	}
 
 	@Override
 	public String getDescription()

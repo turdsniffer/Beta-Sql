@@ -80,7 +80,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
     private void addServer(DataSourceKey dataSourceKey)
     {
         DataSource ds = dataSourceManager.getDataSourceByDbId(dataSourceKey);
-        DbInfoDAO dbInfoDAO = new DbInfoDAO(ds);
+        DbInfoDAO dbInfoDAO = new DbInfoDAO(ds, eventManager);
         Server server = new Server(dataSourceKey.getDbServerName(), dataSourceKey.getInstanceName(), dataSourceKey.getDbName(), dbInfoDAO);
         
         DefaultMutableTreeNode serverNode = new DefaultMutableTreeNode(server);
@@ -296,7 +296,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
             DataSource dataSource = getDataSourceForNode(node);
             DbInfo dbInfo = getDbInfoForNode(node);
             Server server = getServerForNode(node);
-            DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+            DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource, eventManager);
             DbObject userObject = (DbObject) node.getUserObject();
 
             String script = dbInfoDAO.getScript(userObject, dbInfo.getName());
@@ -356,7 +356,7 @@ public class ConnectionsPanel extends javax.swing.JPanel implements EventListene
             return;
         Table table = (Table) node.getUserObject();
         DataSource dataSource = getDataSourceForNode(node);
-        DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource);
+        DbInfoDAO dbInfoDAO = new DbInfoDAO(dataSource, eventManager);
         DbInfo dbInfo = getDbInfoForNode(node);
         List<Map<String, String>> tablePrivileges = dbInfoDAO.getTablePrivileges(table);
         this.tablePrivileges.show(tablePrivileges);

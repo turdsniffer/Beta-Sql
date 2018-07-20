@@ -120,12 +120,10 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 {
                     Schema schema = (Schema) autoCompleteItem;
                     this.server.getDb(schema.getDatabaseName()).loadSchemaInfo(schema.getName());
-                    this.refreshAutoCompleteOptions();
                 }
                 if (autoCompleteItem instanceof DbInfo)
                 {
                     ((DbInfo) autoCompleteItem).load();
-                    this.refreshAutoCompleteOptions();
                 }
             }
             catch (SQLException ex)
@@ -344,9 +342,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         {
             DbInfo dbInfo = (DbInfo) value;
             if (server != null && this.server.equals(dbInfo))
-            {
                 refreshAutoCompleteOptions();
-            }
         }
     }
 
