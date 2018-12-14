@@ -28,12 +28,15 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import static java.util.logging.Logger.getLogger;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -115,12 +118,26 @@ public class DbInfoDAO
     {
         try
         {
+            List<String> schemasToLoad = info.getSchemas().stream().filter(s -> s.isLoaded()).map(s -> s.getName()).collect(Collectors.toList());
             info.setSchemas(this.getSchemas(info.getName()));
+            if(schemasToLoad.isEmpty())
+                schemasToLoad = Collections.singletonList(info.getDefaultSchema().getName());
             
             ListeningExecutorService threadPool = listeningDecorator(newFixedThreadPool(3));
-            Schema defaultSchema = info.getDefaultSchema();
-            threadPool.submit(new ProcedureLoader(info, defaultSchema));
-            threadPool.submit(new TableLoader(info, defaultSchema));
+            
+            
+            for (String schemaNameToLoad: schemasToLoad)
+            {
+                Optional<Schema> schemaOptional = info.getSchemas().stream().filter(s -> s.getName().equalsIgnoreCase(schemaNameToLoad)).findFirst();
+                if(schemaOptional.isPresent())
+                {    
+                    Schema schema = schemaOptional.get();
+                    threadPool.submit(new ProcedureLoader(info, schema));
+                    threadPool.submit(new TableLoader(info, schema));
+                    schema.setLoaded(true);
+                }
+            }
+            
             threadPool.shutdown();
             threadPool.awaitTermination(30, TimeUnit.SECONDS);
             

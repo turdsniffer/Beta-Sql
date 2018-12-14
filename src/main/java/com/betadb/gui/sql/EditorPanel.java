@@ -341,7 +341,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
         if (event.equals(Event.DB_INFO_UPDATED))
         {
             DbInfo dbInfo = (DbInfo) value;
-            if (server != null && this.server.equals(dbInfo))
+            if (server != null && this.server.getDbs().contains(dbInfo))
                 refreshAutoCompleteOptions();
         }
     }

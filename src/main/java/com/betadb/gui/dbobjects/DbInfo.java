@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
  */
 public class DbInfo extends DbObject
 {
+
 	private DbInfoDAO dbInfoDAO;
     private List<Schema> schemas;
-    private List<String> loadedSchemas;
     private boolean loaded;
 
 
@@ -25,7 +25,6 @@ public class DbInfo extends DbObject
 		this.name = dbName;
         this.dbInfoDAO = dbInfoDAO;
         schemas = Lists.newArrayList();
-        this.loadedSchemas = Lists.newArrayList();
         
 	}	
 
@@ -73,6 +72,7 @@ public class DbInfo extends DbObject
     {
         return dbInfoDAO;
     }
+    
 
     public List<Table> getTables()
 	{
