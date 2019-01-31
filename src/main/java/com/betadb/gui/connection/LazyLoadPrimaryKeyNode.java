@@ -1,9 +1,9 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.PrimaryKey;
 import com.betadb.gui.dbobjects.Table;
 import java.util.List;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -12,15 +12,11 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadPrimaryKeyNode extends LazyLoadNode
 {
-    private DbInfoDAO dbInfoDAO;
-    private String dbName;
     private Table table;
 
-    public LazyLoadPrimaryKeyNode(DbInfoDAO dbInfoDAO, String dbName, Table table, DefaultTreeModel treeModel)
+    public LazyLoadPrimaryKeyNode(Table table, DefaultTreeModel treeModel, JTree treeDbs)
     {
-        super("Primary Keys", treeModel);
-        this.dbInfoDAO = dbInfoDAO;
-        this.dbName = dbName;
+        super("Primary Keys", treeModel, treeDbs);
         this.table = table;
     }
 

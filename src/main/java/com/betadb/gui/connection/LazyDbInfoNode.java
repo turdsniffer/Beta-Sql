@@ -1,10 +1,7 @@
 package com.betadb.gui.connection;
 
 import com.betadb.gui.dbobjects.DbInfo;
-import com.betadb.gui.dbobjects.Function;
-import com.betadb.gui.dbobjects.Parameter;
-import com.betadb.gui.dbobjects.Procedure;
-import com.betadb.gui.dbobjects.Table;
+import com.betadb.gui.dbobjects.Schema;
 import com.betadb.gui.events.Event;
 import static com.betadb.gui.events.Event.DB_INFO_UPDATED;
 import com.betadb.gui.events.EventListener;
@@ -12,6 +9,9 @@ import com.betadb.gui.events.EventManager;
 
 import com.betadb.gui.exception.BetaDbException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import javax.swing.JTree;
 import javax.swing.SwingWorker;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -24,15 +24,13 @@ import javax.swing.tree.TreePath;
 public class LazyDbInfoNode extends LazyLoadNode implements EventListener
 {
     private final DbInfo dbInfo;
-    private final JTree treeDbs;
     private final EventManager eventManager;
 
     public LazyDbInfoNode(DbInfo dbInfo, DefaultTreeModel treeModel, JTree treeDbs, EventManager eventManager)
     {
-        super(dbInfo, treeModel);
+        super(dbInfo, treeModel, treeDbs);
         this.dbInfo = dbInfo;
         this.treeModel = treeModel;
-        this.treeDbs = treeDbs;
         this.eventManager = eventManager;
         eventManager.addEventListener(this);
 
@@ -89,79 +87,38 @@ public class LazyDbInfoNode extends LazyLoadNode implements EventListener
         {
             DbInfo dbInfo = (DbInfo) value;
             if (dbInfo == this.dbInfo)
-            {
                 syncWithModel();
-            }
         }
     }
 
     protected void syncWithModel()
     {
-
         int childCount = treeModel.getChildCount(this);
+        List<DefaultMutableTreeNode> curSchemaNodes = new ArrayList();
         for (int i = childCount - 1; i >= 0; i--)
+        {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode)treeModel.getChild(this, i);
+            curSchemaNodes.add(node);
             treeModel.removeNodeFromParent((DefaultMutableTreeNode) treeModel.getChild(this, i));
-
+        }
+        
+        
+        List<Schema> schemas = dbInfo.getSchemas();
         int i = 0;
-        addTables(i++);
-        addStoredProcs(i++);
-        addViews(i++);
-        addFunctions(i++);
-        treeDbs.expandPath(new TreePath(this.getPath()));
-    }
-
-    private void addTables(int nodeIndex)
-    {
-        DefaultMutableTreeNode tables = new DefaultMutableTreeNode("Tables");
-        for (Table table : dbInfo.getTables())
-            tables.add(getTableNode(table));
-        treeModel.insertNodeInto(tables, this, nodeIndex);
-    }
-
-    private DefaultMutableTreeNode getTableNode(Table table)
-    {
-        DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
-        LazyLoadColumnsNode columns = new LazyLoadColumnsNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
-        DefaultMutableTreeNode indexes = new LazyLoadIndexNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
-        LazyLoadForeignKeyNode foreignKeys = new LazyLoadForeignKeyNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
-        LazyLoadPrimaryKeyNode primaryKeys = new LazyLoadPrimaryKeyNode(dbInfo.getDbInfoDAO(), dbInfo.getName(), table, treeModel);
-        tableNode.add(columns);
-        tableNode.add(indexes);
-        tableNode.add(foreignKeys);
-        tableNode.add(primaryKeys);
-        return tableNode;
-    }
-
-    private void addStoredProcs(int nodeIndex)
-    {
-        DefaultMutableTreeNode procedures = new DefaultMutableTreeNode("Stored Procedures");
-        for (Procedure procedure : dbInfo.getProcedures())
+        for (Schema schema : schemas)
         {
-            DefaultMutableTreeNode procedureNode = new DefaultMutableTreeNode(procedure);
-            procedureNode.add(new LazyLoadParametersNode(dbInfo.getDbInfoDAO(), procedure, treeModel));
-            procedures.add(procedureNode);
+            Optional<DefaultMutableTreeNode> matchingSchemaNode = curSchemaNodes.stream().filter(node -> 
+                node.getUserObject() == schema.getName()
+            ).findFirst();
+            if(matchingSchemaNode.isPresent())
+                treeModel.insertNodeInto(matchingSchemaNode.get(), this, i);  
+            else
+            {
+                DefaultMutableTreeNode schemaNode = new LazyLoadSchemaNode(schema, this.treeModel, jtree);
+                treeModel.insertNodeInto(schemaNode, this, i);
+            }
+            i++;            
         }
-        treeModel.insertNodeInto(procedures, this, nodeIndex);
-    }
-
-    private void addViews(int nodeIndex)
-    {
-        DefaultMutableTreeNode views = new DefaultMutableTreeNode("Views");
-        for (Table table : dbInfo.getViews())
-            views.add(getTableNode(table));
-        treeModel.insertNodeInto(views, this, nodeIndex);
-    }
-
-    private void addFunctions(int nodeIndex)
-    {
-        DefaultMutableTreeNode functions = new DefaultMutableTreeNode("Functions");
-        for (Function function : dbInfo.getFunctions())
-        {
-            DefaultMutableTreeNode functionsNode = new DefaultMutableTreeNode(function);
-            for (Parameter parameter : function.getParameters())
-                functionsNode.add(new DefaultMutableTreeNode(parameter));
-            functions.add(functionsNode);
-        }
-        treeModel.insertNodeInto(functions, this, nodeIndex);
+        this.jtree.expandPath(new TreePath(this.getPath()));
     }
 }

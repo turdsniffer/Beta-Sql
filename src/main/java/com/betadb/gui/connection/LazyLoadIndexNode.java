@@ -1,9 +1,9 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.Index;
 import com.betadb.gui.dbobjects.Table;
 import java.util.List;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -12,15 +12,12 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadIndexNode extends LazyLoadNode
 {
-    private final DbInfoDAO dbInfoDAO;
-    private final String dbName;
+
     private final Table table;
 
-    public LazyLoadIndexNode(DbInfoDAO dbInfoDAO, String dbName, Table table, DefaultTreeModel treeModel)
+    public LazyLoadIndexNode(Table table, DefaultTreeModel treeModel, JTree treeDbs)
     {
-        super("Indexes",  treeModel);
-        this.dbInfoDAO = dbInfoDAO;
-        this.dbName = dbName;
+        super("Indexes",  treeModel, treeDbs);
         this.table = table;
 
     }

@@ -3,8 +3,10 @@ package com.betadb.gui.dbobjects;
 
 import com.google.common.collect.Lists;
 import com.swingautocompletion.main.AutoCompleteItem;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -58,21 +60,29 @@ public class DbObject extends AutoCompleteItem
 	@Override
 	public List<String> alternateAutoCompeteIds()
 	{
-        List<String> retVal = Lists.newArrayList();
+        Set<String> retVal = new HashSet<>();
         if(schemaName != null)
 			retVal.add(getSchemaName()+"."+getName());
 		retVal.add(getName());
-		return retVal;
+        retVal.add(getDefaultAutoCompletion());
+        
+		return Lists.newArrayList(retVal);
 	}
 	
 	public String getAutoCompletion()
 	{        
+        return getDefaultAutoCompletion();
+	}
+    //this method is here so that it is not overriden and can be used as one of the alternateAutoCompleteIds above.  That is why we aren't using getAutoCompletion there 
+    //because that method is overridden and can introduce some strange behavior.
+    private String getDefaultAutoCompletion(){
         String dbName = getDatabaseName() != null ?getDatabaseName() +".": "";        
         String schemaName = getSchemaName()!= null ? getSchemaName() +".": "";   
         
-		String autoCompletion = dbName+schemaName+this.getName();
-		return autoCompletion.contains(" ") ? "["+autoCompletion+"]" : autoCompletion;
-	}
+        String sanitizedName = this.getName().matches(".*[ _].*") ? "["+this.getName()+"]": this.getName() ;
+		return dbName+schemaName+sanitizedName;
+    
+    }
 	
 
 	public String getSchemaName()

@@ -1,9 +1,9 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.Column;
 import com.betadb.gui.dbobjects.Table;
 import java.util.List;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -12,15 +12,12 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadColumnsNode extends LazyLoadNode
 {
-    private final DbInfoDAO dbInfoDAO;
-    private final String dbName;
+
     private final Table table;
 
-    public LazyLoadColumnsNode(DbInfoDAO dbInfoDAO, String dbName, Table table, DefaultTreeModel treeModel)
+    public LazyLoadColumnsNode( Table table, DefaultTreeModel treeModel, JTree treeDbs)
     {
-        super("Columns", treeModel);
-        this.dbInfoDAO = dbInfoDAO;
-        this.dbName = dbName;
+        super("Columns", treeModel, treeDbs);
         this.table = table;
 
     }

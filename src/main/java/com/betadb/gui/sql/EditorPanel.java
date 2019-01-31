@@ -153,7 +153,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                     int characterPosition = codeEditor.viewToModel(e.getPoint());
                     Pair<Integer, Integer> wordBounds = TextEditorUtils.getWordBounds(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
                     String word = TextEditorUtils.getCurrentWord(wordBounds, codeEditor);
-                    DbObject dbObject = autoCompleteToDbObjectMap.get(word);
+                    DbObject dbObject = autoCompleteToDbObjectMap.get(word.toLowerCase());
                     if (dbObject != null)
                     {
                         try
@@ -176,7 +176,7 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
                 {
                     int characterPosition = codeEditor.viewToModel(e.getPoint());
                     String word = TextEditorUtils.getWord(codeEditor, new TextEditorUtils.WordBoundsConfig().withExpansionDirection(TextEditorUtils.ExpansionDirection.BOTH).withStartingPosition(characterPosition));
-                    DbObject dbObject = autoCompleteToDbObjectMap.get(word);
+                    DbObject dbObject = autoCompleteToDbObjectMap.get(word.toLowerCase());
                     EventManager.fireEvent(Event.DB_OBJECT_SELECTED, dbObject);
                 }
             }
@@ -203,9 +203,9 @@ public class EditorPanel extends javax.swing.JPanel implements EventListener, Ac
 
         for (DbObject dbObject : server.getAllDbObjects())
         {
-            autoCompleteToDbObjectMap.put(dbObject.getAutoCompleteId(), dbObject);
+            autoCompleteToDbObjectMap.put(dbObject.getAutoCompleteId().toLowerCase(), dbObject);
             for (String alternateAutoComplete : dbObject.alternateAutoCompeteIds())
-                autoCompleteToDbObjectMap.put(alternateAutoComplete, dbObject);
+                autoCompleteToDbObjectMap.put(alternateAutoComplete.toLowerCase(), dbObject);
         }
 
     }

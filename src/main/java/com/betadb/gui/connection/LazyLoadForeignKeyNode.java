@@ -1,9 +1,9 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.ForeignKey;
 import com.betadb.gui.dbobjects.Table;
 import java.util.List;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -12,15 +12,12 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadForeignKeyNode extends LazyLoadNode
 {
-    private DbInfoDAO dbInfoDAO;
-    private String dbName;
+
     private Table table;
 
-    public LazyLoadForeignKeyNode(DbInfoDAO dbInfoDAO, String dbName, Table table, DefaultTreeModel treeModel)
+    public LazyLoadForeignKeyNode(Table table, DefaultTreeModel treeModel, JTree treeDbs)
     {
-        super("Foreign Keys",  treeModel);
-        this.dbInfoDAO = dbInfoDAO;
-        this.dbName = dbName;
+        super("Foreign Keys",  treeModel, treeDbs);
         this.table = table;
     }
 

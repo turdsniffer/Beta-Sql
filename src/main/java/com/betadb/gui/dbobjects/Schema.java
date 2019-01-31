@@ -1,5 +1,6 @@
 package com.betadb.gui.dbobjects;
 
+import com.betadb.gui.dao.DbInfoDAO;
 import com.google.common.collect.Lists;
 import java.util.List;
 
@@ -10,14 +11,18 @@ public class Schema extends DbObject
     private List<View> views;
     private List<Function> functions;
     boolean loaded;
+    private DbInfoDAO dbInfoDAO;
+    private DbInfo dbInfo;
 
-    public Schema(String name)
+    public Schema(String name, DbInfoDAO dbInfoDAO, DbInfo dbInfo)
     {
         this.name = name;
         tables = Lists.newArrayList();
         procedures = Lists.newArrayList();
         views = Lists.newArrayList();
         functions = Lists.newArrayList();
+        this.dbInfo = dbInfo;
+        this.dbInfoDAO = dbInfoDAO;
     }
 
     public List<Table> getTables()
@@ -33,6 +38,11 @@ public class Schema extends DbObject
     public void setLoaded(boolean loaded)
     {
         this.loaded = loaded;
+    }
+    
+    public void load()
+    {
+        dbInfoDAO.loadSchemaInfo(this.dbInfo, this);
     }
 
     public void setTables(List<Table> tables)

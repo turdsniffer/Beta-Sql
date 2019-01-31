@@ -1,9 +1,9 @@
 package com.betadb.gui.connection;
 
-import com.betadb.gui.dao.DbInfoDAO;
 import com.betadb.gui.dbobjects.Parameter;
 import com.betadb.gui.dbobjects.Procedure;
 import java.util.List;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
@@ -12,13 +12,11 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class LazyLoadParametersNode extends LazyLoadNode
 {
-    private final DbInfoDAO dbInfoDAO;
     private final Procedure procedure;
 
-    public LazyLoadParametersNode(DbInfoDAO dbInfoDAO,  Procedure procedure, DefaultTreeModel treeModel)
+    public LazyLoadParametersNode(  Procedure procedure, DefaultTreeModel treeModel, JTree treeDbs)
     {
-        super("Parameters", treeModel);
-        this.dbInfoDAO = dbInfoDAO;
+        super("Parameters", treeModel, treeDbs);
         this.procedure = procedure;
 
     }

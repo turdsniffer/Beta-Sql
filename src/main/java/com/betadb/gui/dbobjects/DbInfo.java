@@ -14,18 +14,15 @@ import java.util.stream.Collectors;
  */
 public class DbInfo extends DbObject
 {
-
 	private DbInfoDAO dbInfoDAO;
     private List<Schema> schemas;
     private boolean loaded;
 
-
-	public DbInfo(String dbName, DbInfoDAO dbInfoDAO)
+    public DbInfo(String dbName, DbInfoDAO dbInfoDAO)
 	{
 		this.name = dbName;
         this.dbInfoDAO = dbInfoDAO;
         schemas = Lists.newArrayList();
-        
 	}	
 
 	public List<DbObject> getAllDbObjects()
@@ -44,8 +41,6 @@ public class DbInfo extends DbObject
     public void refreshToDefault() throws SQLException{
         this.getDbInfoDAO().refreshDbInfo(this);
     }
-    
-
 	
 	@Override
 	public String toString()

@@ -76,7 +76,7 @@ public class DbInfoDAO
         return retVal;
     }
 
-    private List<Schema> getSchemas(String dbName) throws SQLException
+    private List<Schema> getSchemas(DbInfo dbInfo, String dbName) throws SQLException
     {
         Connection conn = ds.getConnection();
         conn.setCatalog(dbName);
@@ -85,7 +85,7 @@ public class DbInfoDAO
         ResultSet rs = conn.getMetaData().getSchemas();
         while (rs.next())
         {
-            Schema schema = new Schema(rs.getString("TABLE_SCHEM"));
+            Schema schema = new Schema(rs.getString("TABLE_SCHEM"), this, dbInfo);
             schema.setObjectType(DbObjectType.SCHEMA);
             schema.setDatabaseName(dbName);
             retVal.add(schema);
@@ -95,23 +95,23 @@ public class DbInfoDAO
         return retVal;
     }
 
-    public DbInfo loadSchemaInfo(DbInfo info, Schema schema) throws SQLException
+    public void loadSchemaInfo(DbInfo info, Schema schema)
     {
         try
         {
             ListeningExecutorService threadPool = listeningDecorator(newFixedThreadPool(2));
-            threadPool.submit(new ProcedureLoader(info, schema));
-            threadPool.submit(new TableLoader(info, schema));
+            threadPool.submit(new ProcedureLoader(schema));
+            threadPool.submit(new TableLoader(schema));
             threadPool.shutdown();
             threadPool.awaitTermination(30, TimeUnit.SECONDS);
             schema.setLoaded(true);
-            eventManager.fireEvent(Event.DB_INFO_UPDATED, info);
-            return info;
+            eventManager.fireEvent(Event.DB_INFO_UPDATED, info);            
         }
         catch (InterruptedException ex)
         {
             throw new BetaDbException("Error loading db objects");
         }
+        
     }
 
     public DbInfo refreshDbInfo(DbInfo info) throws SQLException
@@ -119,7 +119,7 @@ public class DbInfoDAO
         try
         {
             List<String> schemasToLoad = info.getSchemas().stream().filter(s -> s.isLoaded()).map(s -> s.getName()).collect(Collectors.toList());
-            info.setSchemas(this.getSchemas(info.getName()));
+            info.setSchemas(this.getSchemas(info ,info.getName()));
             if(schemasToLoad.isEmpty())
                 schemasToLoad = Collections.singletonList(info.getDefaultSchema().getName());
             
@@ -132,8 +132,8 @@ public class DbInfoDAO
                 if(schemaOptional.isPresent())
                 {    
                     Schema schema = schemaOptional.get();
-                    threadPool.submit(new ProcedureLoader(info, schema));
-                    threadPool.submit(new TableLoader(info, schema));
+                    threadPool.submit(new ProcedureLoader(schema));
+                    threadPool.submit(new TableLoader(schema));
                     schema.setLoaded(true);
                 }
             }
@@ -154,24 +154,24 @@ public class DbInfoDAO
 
     private class ProcedureLoader implements Runnable
     {
-        private DbInfo dbInfo;
+       
         private Schema schema;
 
-        public ProcedureLoader(DbInfo dbInfo, Schema schema)
+        public ProcedureLoader( Schema schema)
         {
-            this.dbInfo = dbInfo;
+           
             this.schema = schema;
         }
 
         @Override
         public void run()
-        {
+        {            
             Connection conn;
             try
             {
                 conn = ds.getConnection();
                 DatabaseMetaData metaData = conn.getMetaData();
-                List<Procedure> procedures = getProcedures(metaData, dbInfo.getName(), schema.getName());
+                List<Procedure> procedures = getProcedures(metaData, schema.getDatabaseName(), schema.getName());
                 schema.setProcedures(procedures);
             }
             catch (SQLException ex)
@@ -183,12 +183,12 @@ public class DbInfoDAO
 
     private class TableLoader implements Runnable
     {
-        private DbInfo dbInfo;
+       
         private Schema schema;
 
-        public TableLoader(DbInfo dbInfo, Schema schema)
+        public TableLoader( Schema schema)
         {
-            this.dbInfo = dbInfo;
+          
             this.schema = schema;
         }
 
@@ -200,7 +200,7 @@ public class DbInfoDAO
             {
                 conn = ds.getConnection();
                 DatabaseMetaData metaData = conn.getMetaData();
-                Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, dbInfo.getName(), schema);
+                Pair<List<Table>, List<View>> tablesAndViewsPair = getTablesAndViews(metaData, schema.getDatabaseName(), schema);
                 schema.setTables(tablesAndViewsPair.getFirst());
                 schema.setViews(tablesAndViewsPair.getSecond());
             }
